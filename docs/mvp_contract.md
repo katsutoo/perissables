@@ -10,7 +10,7 @@ Ship a funny, fast, multiplayer pixel-art RPG where players pick premade food ch
 
 ## MVP Scope (In)
 
-1. Native desktop client (Go + Raylib) and authoritative Go server.
+1. Native desktop client (Go + raylib-go, backed by raylib) and authoritative Go server.
 2. Story engine driven by JSON (no story-specific hardcoded logic).
 3. d100 dice system with locked rule set:
    - stat range `5..70`

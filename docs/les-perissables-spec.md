@@ -67,13 +67,13 @@ Multiplayer compatibility rule:
 
 ## Tech Stack
 
-The entire game is written in Go using Raylib for 2D rendering. The UI surface is intentionally minimal — character select screen, the top-down tile map with camera follow, a dialog box for story text and choices, a combat screen with HP bars and spell buttons, dice roll animations, and a tiny item slot per character. No complex menus, no inventory management, no stat screens. Raylib is perfect for this scope and handles tile-based 2D rendering with ease.
+The entire game is written in Go using raylib-go (Go bindings for raylib) for 2D rendering. The UI surface is intentionally minimal — character select screen, the top-down tile map with camera follow, a dialog box for story text and choices, a combat screen with HP bars and spell buttons, dice roll animations, and a tiny item slot per character. No complex menus, no inventory management, no stat screens. raylib-go/raylib is perfect for this scope and handles tile-based 2D rendering with ease.
 
 ### Tech Stack Schema
 
 | Layer         | Technology                                        | Purpose                                                           |
 | ------------- | ------------------------------------------------- | ----------------------------------------------------------------- |
-| Game Client   | Go + Raylib                                       | Window, render loop, input, scene transitions, UI drawing         |
+| Game Client   | Go + raylib-go (raylib bindings)                  | Window, render loop, input, scene transitions, UI drawing         |
 | Game Server   | Go + Chi (`github.com/go-chi/chi/v5`)             | Routing, middleware, health endpoints, session orchestration      |
 | Networking    | `github.com/gorilla/websocket` over `net/http`    | WebSocket transport for input events and state snapshots          |
 | Story Content | JSON files + schema validator                     | Data-driven stories (events, choices, checks, encounters)         |
@@ -92,7 +92,7 @@ The entire game is written in Go using Raylib for 2D rendering. The UI surface i
       WebSocket protocol
              |
              v
-      [Go + Raylib Client]
+      [Go + raylib-go Client]
  (render, UI skin, input, audio)
 ```
 
@@ -295,7 +295,7 @@ Multiplayer runs over WebSockets. A Go server holds the authoritative game state
 
 ## Platform
 
-The game ships exclusively on Steam with native builds for both Linux and Windows. Go cross-compiles effortlessly between the two platforms, and Raylib supports both out of the box. Steam integration via Steamworks SDK handles multiplayer lobbies, friend invites, and achievements. No browser version — just clean native binaries. Priced at 2-3 euros.
+The game ships exclusively on Steam with native builds for both Linux and Windows. Go cross-compiles effortlessly between the two platforms, and raylib-go (with underlying raylib) supports both out of the box. Steam integration via Steamworks SDK handles multiplayer lobbies, friend invites, and achievements. No browser version — just clean native binaries. Priced at 2-3 euros.
 
 macOS note: a Mac build can technically be uploaded to Steam, but a smooth user experience on modern macOS generally requires code signing and notarization, which requires an Apple Developer Program membership.
 
@@ -361,7 +361,7 @@ Example story JSON check (d100):
 }
 ```
 
-## Implementation Roadmap (Go + Raylib)
+## Implementation Roadmap (Go + raylib-go)
 
 This roadmap is intentionally split into small phases so we can ship step by step without writing too much code per prompt.
 
@@ -411,7 +411,7 @@ cmd/
 internal/
   app/                # App wiring and lifecycle
   scene/              # Scene manager (lobby, world, combat)
-  render/             # Raylib draw wrappers, camera, atlas
+  render/             # raylib-go draw wrappers, camera, atlas
   input/              # Input mapping
   netcode/            # WebSocket protocol, client sync
   game/               # Runtime game state
@@ -438,7 +438,7 @@ stories/
 
 test/
   integration/          # Multi-package integration tests (server/session/story flow)
-  graphics/             # Raylib smoke/visual tests (run with `-tags=graphics`)
+  graphics/             # raylib-go smoke/visual tests (run with `-tags=graphics`)
   testutil/             # Shared fixtures, builders, test helpers
 
 docs/
@@ -492,7 +492,7 @@ LICENSE
 **Goal:** Have a stable game window and scene switching.
 
 **Build:**
-- Raylib window boot, fixed update loop, draw loop.
+- raylib-go window boot, fixed update loop, draw loop.
 - Scene manager with `LobbyScene`, `WorldScene`, `CombatScene` placeholders.
 - Basic keyboard input abstraction.
 - Audio manager skeleton with channels (`ambience`, `music`, `sfx`, `voice`) and master/music/sfx/voice volume controls.
@@ -700,7 +700,7 @@ LICENSE
 **Goal:** Prepare shipping builds for Linux + Windows.
 
 **Build:**
-- GoReleaser config for reproducible Linux/Windows artifacts (with CGO/Raylib build matrix strategy).
+- GoReleaser config for reproducible Linux/Windows artifacts (with CGO/raylib-go + raylib build matrix strategy).
 - Build scripts, assets packaging, version stamping.
 - Steamworks integration pass (lobbies, invites, achievements as scoped).
 - Bind multiplayer identity to Steam auth/session tickets for production trust.

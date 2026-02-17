@@ -28,5 +28,28 @@ go.work.sum
 .env
 
 # Editor/IDE
-# .idea/
-# .vscode/
+/.idea/
+/.vscode/
+/.vscode-test/
+/.cursor/
+/.cursor*
+
+# AI tooling metadata
+/.codex/
+/.codex*
+/.claude/
+/.claude-code/
+/.claude*
+/.opencode/
+/.opencode*
+
+# Local build outputs
+/bin/
+/dist/
+/build/
+
+# Go local caches/profiling artifacts (when repo-local)
+/.gocache/
+/.gomodcache/
+*.prof
+*.pprof

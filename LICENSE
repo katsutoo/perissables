@@ -1,0 +1,47 @@
+Project: Les Périssables
+Copyright (c) 2026 カツト
+All rights reserved.
+
+1. Ownership
+
+All rights, title, and interest in and to the software and associated materials are
+owned exclusively by カツト.
+
+2. No License Grant
+
+No license is granted to use, reproduce, modify, distribute, sublicense, publish,
+perform, display, sell, or create derivative works from this project, in whole or
+in part, except as explicitly required by applicable law.
+
+3. Permitted Actions
+
+You may:
+- View the source code for personal reference.
+- Submit issues and pull requests to the repository.
+
+Submitting a pull request does not grant you rights to redistribute the project.
+If your contribution is accepted, it is incorporated under this All Rights Reserved
+license unless a separate written agreement states otherwise.
+
+4. Prohibited Actions
+
+Without prior written permission from カツト, you may not:
+- Copy or redistribute source code or assets.
+- Use this project in commercial or non-commercial products.
+- Mirror, rehost, repackage, or republish binaries or assets.
+- Create or distribute derivative projects based on this codebase or assets.
+
+5. Third-Party Components
+
+Third-party dependencies included in this project may be licensed separately by
+their respective owners. Their original licenses remain in effect for those
+components only.
+
+6. Reservation Of Rights
+
+All rights not expressly granted are reserved.
+
+7. Contact
+
+For licensing, permissions, or commercial inquiries:
+vincent@sshmoi.com

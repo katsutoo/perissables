@@ -2,7 +2,9 @@
 
 Status: Locked for pre-repo planning
 Owner: Project team
-Updated: 2026-02-17
+Updated: 2026-03-11
+
+This document is the single source of truth for locked MVP scope and implementation decisions.
 
 ## Product Objective
 
@@ -17,6 +19,7 @@ Ship a funny, fast, multiplayer pixel-art RPG where players pick premade food ch
    - success when `roll <= stat`
    - critical success on `000` (internal `0`)
    - critical failure on `100`
+   - this `000`/`100` asymmetry is intentional for flavor even though it creates `101` discrete outcomes (`000` through `100`)
 4. Basic turn-based combat integrated with story encounters.
 5. Preset character roster (no character build system, no leveling).
 6. Run flow: lobby -> story -> end summary -> lobby.
@@ -52,7 +55,7 @@ Ship a funny, fast, multiplayer pixel-art RPG where players pick premade food ch
 ## Locked Architecture Decisions
 
 - HTTP router: `github.com/go-chi/chi/v5`
-- WebSocket library: `github.com/gorilla/websocket`
+- WebSocket library: `github.com/coder/websocket`
 - Production transport: `wss://` (TLS terminated by reverse proxy)
 - Local development transport: `ws://localhost`
 - WebSocket payload for MVP: JSON
@@ -212,3 +215,4 @@ Important runtime rule:
 - Any feature outside this contract is added to post-MVP backlog.
 - Scope changes only happen between phases, never inside an active phase.
 - If scope grows, timeline updates must be acknowledged before coding continues.
+- Pricing and other business-facing release notes belong in `docs/release_notes.md` unless they become locked MVP constraints.

@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - shrek
+  pull_request:
+    branches:
+      - shrek
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go-checks:
+    name: Go Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install static analysis tools
+        run: |
+          GOBIN="$HOME/go/bin" go install honnef.co/go/tools/cmd/staticcheck@v0.7.0
+          GOBIN="$HOME/go/bin" go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
+
+      - name: Run unit tests
+        run: go test ./...
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Run staticcheck
+        run: staticcheck ./...
+
+      - name: Run govulncheck
+        run: govulncheck ./...

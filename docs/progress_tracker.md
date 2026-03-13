@@ -39,14 +39,14 @@ This tracker is intentionally detailed. Use `docs/mvp_contract.md` for locked MV
 
 ## Phase 01 - Repo Bootstrap
 
-- [ ] 01.1 Initialize module and root folders (`cmd/`, `internal/`, `assets/`, `stories/`, `docs/`)
-- [ ] 01.2 Create `cmd/client/main.go` and `cmd/server/main.go` with startup wiring only
-- [ ] 01.3 Add logging bootstrap (`internal/logx`) using `slog` structured logs
-- [ ] 01.4 Add `justfile` commands: `run-client`, `run-server`, `test`, `lint`, `security-scan`
-- [ ] 01.5 Add baseline checks (`go test ./...`, `go vet ./...`, `staticcheck`, `govulncheck`)
-- [ ] 01.6 Add legal files (`COPYRIGHT`, ARR `LICENSE`) in main repo scaffold
-- [ ] 01.7 Add starter CI workflow at `.github/workflows/ci.yml` with locked baseline checks
-- [ ] 01.8 Phase 01 complete
+- [x] 01.1 Initialize module and root folders (`cmd/`, `internal/`, `assets/`, `stories/`, `docs/`)
+- [x] 01.2 Create `cmd/client/main.go` and `cmd/server/main.go` with startup wiring only
+- [x] 01.3 Add logging bootstrap (`internal/logx`) using `slog` structured logs
+- [x] 01.4 Add `justfile` commands: `run-client`, `run-server`, `test`, `lint`, `security-scan`
+- [x] 01.5 Add baseline checks (`go test ./...`, `go vet ./...`, `staticcheck`, `govulncheck`)
+- [x] 01.6 Add legal files (`COPYRIGHT`, ARR `LICENSE`) in main repo scaffold
+- [x] 01.7 Add starter CI workflow at `.github/workflows/ci.yml` with locked baseline checks
+- [x] 01.8 Phase 01 complete
 
 ## Phase 02 - Render Loop And Scene Skeleton
 

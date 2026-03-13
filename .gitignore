@@ -47,6 +47,7 @@ go.work.sum
 /bin/
 /dist/
 /build/
+/tmp/
 
 # Go local caches/profiling artifacts (when repo-local)
 /.gocache/

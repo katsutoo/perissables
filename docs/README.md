@@ -12,7 +12,6 @@ This directory is split by purpose so product vision, locked MVP decisions, and 
 - `docs/content-packs.md`: data-driven story/theme/character pack model, examples, and repo boundary.
 - `docs/roadmap.md`: milestone plan, phase-by-phase delivery path, definition of done, and known risks.
 - `docs/progress_tracker.md`: detailed checkbox tracker for locks, phases, and completion status.
-- `docs/phase_acceptance.md`: reusable template for accepting a completed phase.
 - `docs/release_notes.md`: business and release notes that should stay separate from core technical design.
 
 ## Recommended Reading Order
@@ -21,7 +20,7 @@ This directory is split by purpose so product vision, locked MVP decisions, and 
 2. Read `docs/product.md` to understand the game and example content.
 3. Read `docs/mvp_contract.md` for the locked MVP boundaries.
 4. Read `docs/architecture.md`, `docs/networking.md`, and `docs/content-packs.md` for implementation shape.
-5. Read `docs/roadmap.md` for sequencing, `docs/progress_tracker.md` for execution status, and `docs/phase_acceptance.md` when closing a phase.
+5. Read `docs/roadmap.md` for sequencing and `docs/progress_tracker.md` for execution status and phase completion tracking.
 
 ## Document Rules
 

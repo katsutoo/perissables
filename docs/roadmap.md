@@ -26,7 +26,7 @@ These phases establish scope, repo shape, and the first runnable client/server s
 
 ### Phase 00 - Scope Freeze
 
-Lock MVP scope, non-goals, and acceptance rules before code starts.
+Lock MVP scope, non-goals, and completion criteria before code starts.
 
 ### Phase 01 - Repo Bootstrap
 

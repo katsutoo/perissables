@@ -17,7 +17,7 @@ The project works because the joke is loud but the scope is disciplined:
 - For multiplayer model and authority boundaries, read `docs/networking.md`.
 - For story/theme/character pack design, read `docs/content-packs.md`.
 - For delivery planning and known risks, read `docs/roadmap.md`.
-- For phase sign-off, read `docs/phase_acceptance.md`.
+- For delivery status and phase completion tracking, read `docs/progress_tracker.md`.
 - For release and pricing notes, read `docs/release_notes.md`.
 
 ## Document Boundary

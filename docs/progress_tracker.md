@@ -33,7 +33,7 @@ This tracker is intentionally detailed. Use `docs/mvp_contract.md` for locked MV
 - [x] 00.2 Freeze core constraints: party size (`4`), tile size (`16x16`), target FPS (`60`), target resolutions (`1280x720`, `1920x1080`)
 - [x] 00.3 Freeze dice/check rules (`d100`, stat range `5-70`, `000` crit success, `100` crit fail)
 - [x] 00.4 Freeze networking scope for MVP (hosted server, no peer-to-peer)
-- [x] 00.5 Create `docs/phase_acceptance.md` template for all future phases
+- [x] 00.5 Define reusable phase-completion criteria for future phases
 - [x] 00.6 Create `docs/README.md` doc map and doc-boundary guidance
 - [x] 00.7 Phase 00 complete
 

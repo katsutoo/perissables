@@ -1,6 +1,7 @@
 package logx
 
 import (
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -27,15 +28,17 @@ func New(config Config) *slog.Logger {
 	return slog.New(handler).With(slog.String("service", config.Service))
 }
 
-func LevelFromEnv(value string) slog.Level {
+func ParseLevel(value string) (slog.Level, error) {
 	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "", "info":
+		return slog.LevelInfo, nil
 	case "debug":
-		return slog.LevelDebug
+		return slog.LevelDebug, nil
 	case "warn", "warning":
-		return slog.LevelWarn
+		return slog.LevelWarn, nil
 	case "error":
-		return slog.LevelError
+		return slog.LevelError, nil
 	default:
-		return slog.LevelInfo
+		return 0, fmt.Errorf("invalid log level %q", value)
 	}
 }

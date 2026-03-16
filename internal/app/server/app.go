@@ -12,7 +12,10 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-const shutdownTimeout = 10 * time.Second
+const (
+	shutdownTimeout = 10 * time.Second
+	maxHeaderBytes  = 1 << 20
+)
 
 type healthResponse struct {
 	Status string `json:"status"`
@@ -40,6 +43,7 @@ func Run(ctx context.Context, logger *slog.Logger, addr string) error {
 	server := &http.Server{
 		Addr:              addr,
 		Handler:           router,
+		MaxHeaderBytes:    maxHeaderBytes,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      10 * time.Second,
@@ -49,15 +53,14 @@ func Run(ctx context.Context, logger *slog.Logger, addr string) error {
 	errCh := make(chan error, 1)
 
 	go func() {
+		defer close(errCh)
+
 		logger.Info("server listening", slog.String("addr", addr))
 
 		err := server.ListenAndServe()
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- fmt.Errorf("listen server: %w", err)
-			return
 		}
-
-		close(errCh)
 	}()
 
 	select {
@@ -67,15 +70,18 @@ func Run(ctx context.Context, logger *slog.Logger, addr string) error {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 		defer cancel()
 
-		if err := server.Shutdown(shutdownCtx); err != nil {
-			return fmt.Errorf("shutdown server: %w", err)
+		shutdownErr := server.Shutdown(shutdownCtx)
+		if shutdownErr != nil && !errors.Is(shutdownErr, http.ErrServerClosed) {
+			shutdownErr = fmt.Errorf("shutdown server: %w", shutdownErr)
+		} else {
+			shutdownErr = nil
 		}
 
 		if err, ok := <-errCh; ok {
 			return err
 		}
 
-		return nil
+		return shutdownErr
 	case err, ok := <-errCh:
 		if !ok {
 			return nil

@@ -118,7 +118,7 @@ These phases cover shipping, then optional community infrastructure after the co
 
 ### Phase 18 - Steam Packaging
 
-Prepare reproducible release builds, Steamworks integration, and release operations.
+Prepare reproducible release builds, Steamworks integration, and release operations, with production binaries distributed through Steam rather than public release pages.
 
 ### Phase 19 - Community Hub Foundation
 

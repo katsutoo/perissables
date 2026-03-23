@@ -61,7 +61,8 @@ Ship a funny, fast, multiplayer pixel-art RPG where players pick premade food ch
 - Local development transport: `ws://localhost`
 - WebSocket payload for MVP: JSON
 - Map format for MVP: TMX
-- Release automation: GoReleaser
+- Release automation: GoReleaser for build/package generation only; it does not change licensing or grant public binary distribution rights
+- Distribution policy: production desktop binaries ship through Steam depots, not public release pages
 - Release targets: Linux + Windows only
 - macOS policy: deferred (requires Apple Developer Program for signing/notarization workflow)
 - Story schema versioning: `schema_version` integer, start at `1`, reject unsupported major versions

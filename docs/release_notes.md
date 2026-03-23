@@ -6,6 +6,8 @@ Status: exploratory business and release notes, not the source of locked impleme
 
 - Steam-first release.
 - Native Linux and Windows builds first.
+- GoReleaser may be used to build release artifacts, but that does not imply public binary distribution.
+- Paid production binaries should ship through Steam only, not public GitHub/GitLab release pages.
 - No browser version planned.
 - macOS remains deferred unless signing and notarization work is adopted.
 

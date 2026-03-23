@@ -11,12 +11,14 @@
 
 | Layer | Technology | Purpose |
 | --- | --- | --- |
-| Game client | Go + `raylib-go` | Windowing, render loop, input, scene transitions, UI drawing, audio hooks |
-| Game server | Go + `chi` | Routing, middleware, health endpoints, session orchestration |
-| Networking | `github.com/coder/websocket` over `net/http` | Client input transport and authoritative state/event updates |
+| Game client | Rust + `raylib` (`raylib-rs`) | Windowing, render loop, input, scene transitions, UI drawing, audio hooks |
+| Game server | Rust + `axum` + `tokio` + `tower` | Routing, middleware, health endpoints, session orchestration |
+| Networking | `axum` WebSockets on `tokio` | Client input transport and authoritative state/event updates |
+| Serialization | `serde` + `serde_json` | Protocol payloads, story parsing, save/load data, tooling I/O |
 | Story content | JSON + validator tooling | Story definitions, branching events, encounters, metadata |
 | Theme system | Asset manifests + per-theme packs | Tilesets, ambience, combat backdrops, UI skin references |
-| Quality baseline | `go test`, `go vet`, `staticcheck`, `govulncheck` | Reliability and security hygiene |
+| Error handling | `thiserror` + `anyhow` | Domain errors plus startup/tooling context with explicit boundaries |
+| Quality baseline | `cargo fmt --all --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-features`, `cargo audit` | Reliability and security hygiene |
 | Release automation | GoReleaser | Tagged Linux/Windows builds, packaging, checksums |
 | Distribution | Steam + Steamworks SDK | Lobbies, invites, achievements, native distribution |
 
@@ -26,13 +28,13 @@
 [Story JSON + Theme/Character Data]
                |
                v
-        [Authoritative Go Server]
+      [Authoritative Rust Server]
    (session state, checks, combat, sync)
                |
         WebSocket event/state flow
                |
                v
-         [Go + raylib-go Client]
+    [Rust + raylib-rs Client]
     (render, input, local audio playback)
 ```
 
@@ -53,24 +55,43 @@
 ## Intended Project Structure
 
 ```text
-cmd/
-  client/
-  server/
+Cargo.toml
+mise.toml
 
-internal/
-  app/
-  scene/
-  render/
-  input/
-  netcode/
-  game/
-  story/
-  theme/
-  combat/
-  character/
-  item/
-  dice/
-  logx/
+crates/
+  client/
+    src/
+      main.rs
+      app/
+      scene/
+      render/
+      input/
+      audio/
+  server/
+    src/
+      main.rs
+      startup.rs
+      router.rs
+      session/
+      netcode/
+  game_core/
+    src/
+      game/
+      story/
+      theme/
+      combat/
+      character/
+      item/
+      dice/
+      save/
+  storycheck/
+    src/
+      main.rs
+  shared/
+    src/
+      protocol/
+      ids/
+      logging.rs
 
 assets/
   themes/
@@ -82,7 +103,7 @@ stories/
   builtin/
   community/
 
-test/
+tests/
   integration/
   graphics/
   testutil/
@@ -90,11 +111,12 @@ test/
 
 ## Engineering Practices
 
-- Standard library first, minimal dependencies.
-- Clear package boundaries and constructor injection.
+- Standard library first, minimal crates beyond clear wins.
+- Clear crate/module boundaries and explicit ownership.
 - No ignored errors, no hidden panic paths outside startup.
-- Structured logging with `slog`.
-- Table-driven tests for parser, rules, and validation logic.
+- Use `thiserror` for domain/application errors and `anyhow` for startup/tooling context.
+- Structured logging with `tracing` and `tracing-subscriber`.
+- Table-driven and integration tests for parser, rules, and validation logic.
 - Small end-to-end slices before broad feature expansion.
 
 ## Where Locks Live

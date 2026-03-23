@@ -7,8 +7,8 @@ This tracker is intentionally detailed. Use `docs/mvp_contract.md` for locked MV
 ## Pre-Implementation Lock Checklist
 
 - [x] LOCK-1 Map format selected: `TMX`
-- [x] LOCK-2 WebSocket package selected: `github.com/coder/websocket`
-- [x] LOCK-3 HTTP router selected: `github.com/go-chi/chi/v5`
+- [x] LOCK-2 WebSocket transport selected: `axum` WebSockets on `tokio`
+- [x] LOCK-3 HTTP/router stack selected: `axum` + `tower`
 - [x] LOCK-4 Production transport fixed: `wss://` with reverse-proxy TLS termination
 - [x] LOCK-5 WebSocket payload format fixed for MVP: `JSON`
 - [x] LOCK-6 Story/theme schema versioning fixed: `schema_version` integer, start at `1`, reject unsupported major versions
@@ -19,7 +19,7 @@ This tracker is intentionally detailed. Use `docs/mvp_contract.md` for locked MV
 - [x] LOCK-11 TMX conventions fixed: layer names plus object naming/property rules
 - [x] LOCK-12 Asset conventions fixed: sprite sheet/frame order/naming plus audio formats
 - [x] LOCK-13 Repo split/legal baseline fixed: ARR main repo plus MIT stories repo with legal files on day 1
-- [x] LOCK-14 CI baseline fixed: `go test`, `go vet`, `staticcheck`, `govulncheck`
+- [x] LOCK-14 CI baseline fixed: `cargo fmt --all --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-features`, `cargo audit`
 - [x] LOCK-15 Audio scope fixed: `ambience`/`music`/`sfx`/`voice` channels plus gameplay audio events
 - [x] LOCK-16 Voice chat policy fixed: no in-game voice chat; external apps only
 - [x] LOCK-17 Community content/licensing boundary fixed: MIT data packs plus ARR runtime/assets
@@ -39,14 +39,14 @@ This tracker is intentionally detailed. Use `docs/mvp_contract.md` for locked MV
 
 ## Phase 01 - Repo Bootstrap
 
-- [] 01.1 Initialize module and root folders (`cmd/`, `internal/`, `assets/`, `stories/`, `docs/`)
-- [] 01.2 Create `cmd/client/main.go` and `cmd/server/main.go` with startup wiring only
-- [] 01.3 Add logging bootstrap (`internal/logx`) using `slog` structured logs
-- [] 01.4 Add `justfile` commands: `run-client`, `run-server`, `test`, `lint`, `security-scan`
-- [] 01.5 Add baseline checks (`go test ./...`, `go vet ./...`, `staticcheck`, `govulncheck`)
-- [] 01.6 Add legal files (`COPYRIGHT`, ARR `LICENSE`) in main repo scaffold
-- [] 01.7 Add starter CI workflow at `.github/workflows/ci.yml` with locked baseline checks
-- [] 01.8 Phase 01 complete
+- [ ] 01.1 Initialize Rust workspace and root folders (`Cargo.toml`, `mise.toml`, `crates/`, `assets/`, `stories/`, `docs/`)
+- [ ] 01.2 Create `crates/client/src/main.rs` and `crates/server/src/main.rs` with startup wiring only
+- [ ] 01.3 Add logging bootstrap (`crates/shared/src/logging.rs`) using `tracing` and `tracing-subscriber`
+- [ ] 01.4 Add `mise` tasks in `mise.toml`: `run-client`, `run-server`, `test`, `lint`, `security-scan`
+- [ ] 01.5 Add baseline checks (`cargo fmt --all --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-features`, `cargo audit`)
+- [ ] 01.6 Add legal files (`COPYRIGHT`, ARR `LICENSE`) in main repo scaffold
+- [ ] 01.7 Add starter CI workflow at `.github/workflows/ci.yml` with locked baseline checks
+- [ ] 01.8 Phase 01 complete
 
 ## Phase 02 - Render Loop And Scene Skeleton
 
@@ -71,7 +71,7 @@ This tracker is intentionally detailed. Use `docs/mvp_contract.md` for locked MV
 ## Phase 04 - Story Schema v1 (Core)
 
 - [ ] 04.1 Define schema files for story metadata, events, choices, checks, encounters
-- [ ] 04.2 Implement Go structs in `internal/story` matching schema fields
+- [ ] 04.2 Implement Rust structs in `crates/game_core/src/story` matching schema fields
 - [ ] 04.3 Implement loader with strict validation and helpful path-based errors
 - [ ] 04.4 Add table-driven tests for valid/invalid story files
 - [ ] 04.5 Add one canonical example story in `stories/builtin/`
@@ -180,7 +180,7 @@ This tracker is intentionally detailed. Use `docs/mvp_contract.md` for locked MV
 
 ## Phase 15 - Content Tooling For Story Creators
 
-- [ ] 15.1 Create `cmd/storycheck` CLI for story/character/theme schema and reference validation
+- [ ] 15.1 Create `crates/storycheck` CLI for story/character/theme schema and reference validation
 - [ ] 15.2 Validate cross-file references (story -> character -> theme -> assets)
 - [ ] 15.3 Add pack manifest checks (`pack_id`, `version`, `checksum`)
 - [ ] 15.4 Add `--dry-run` graph walk for branching reachability and dead ends
@@ -209,7 +209,7 @@ This tracker is intentionally detailed. Use `docs/mvp_contract.md` for locked MV
 
 ## Phase 18 - Steam Packaging And Release Readiness
 
-- [ ] 18.1 Add GoReleaser config for Linux/Windows release automation
+- [ ] 18.1 Add GoReleaser config for Rust Linux/Windows release automation
 - [ ] 18.2 Add reproducible Linux/Windows build scripts and version stamping
 - [ ] 18.3 Package runtime assets and verify path handling in release builds
 - [ ] 18.4 Integrate scoped Steamworks features (lobbies/invites/achievements)

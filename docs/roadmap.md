@@ -30,7 +30,7 @@ Lock MVP scope, non-goals, and completion criteria before code starts.
 
 ### Phase 01 - Repo Bootstrap
 
-Create the Go workspace, client/server entrypoints, logging, legal files, and CI baseline.
+Create the Rust workspace, client/server entrypoints, logging, legal files, and CI baseline.
 
 ### Phase 02 - Render Loop And Scene Skeleton
 
@@ -139,7 +139,7 @@ Add moderation policy, abuse controls, and minimal admin tooling for community c
 ## Known Risks
 
 - `Steamworks`: Steam integration is conceptually simple on paper but often messy in practice, especially around auth, lobby behavior, native SDK setup, and release testing.
-- `Packaging`: `raylib-go`, native dependencies, and cross-platform release builds are likely to cause more friction than the core game logic.
+- `Packaging`: `raylib-rs`, native `raylib` dependencies, and cross-platform release builds are likely to cause more friction than the core game logic.
 - `Multiplayer sync`: Story state, combat state, reconnect flow, and deterministic-looking client behavior can become subtle quickly once multiple players act under latency.
 - `Creator tooling`: the data-driven model is a strength, but it only pays off if validation and authoring tools arrive early enough.
 

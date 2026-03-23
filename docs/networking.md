@@ -19,7 +19,7 @@ That model fits the project well because it keeps co-op sync readable, limits ch
 
 - Good fit for a small real-time co-op game with frequent but lightweight state updates.
 - Simple enough for MVP implementation and debugging.
-- Works cleanly with a Go HTTP server and reverse-proxy TLS termination.
+- Works cleanly with an `axum`/`tokio` server and reverse-proxy TLS termination.
 
 ## Message Shape
 

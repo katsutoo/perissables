@@ -7,7 +7,7 @@ This directory is split by purpose so product vision, locked MVP decisions, and 
 - `docs/les-perissables-spec.md`: short project overview and doc map.
 - `docs/product.md`: game vision, tone, player loop, and concrete content examples.
 - `docs/mvp_contract.md`: locked MVP scope and implementation decisions. This is the single source of truth for anything marked locked.
-- `docs/architecture.md`: client/server structure, stack rationale, package layout, and engineering practices.
+- `docs/architecture.md`: client/server structure, stack rationale, crate/module layout, and engineering practices.
 - `docs/networking.md`: multiplayer model, server authority, sync approach, and security posture.
 - `docs/content-packs.md`: data-driven story/theme/character pack model, examples, and repo boundary.
 - `docs/roadmap.md`: milestone plan, phase-by-phase delivery path, definition of done, and known risks.

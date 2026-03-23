@@ -2,7 +2,7 @@
 
 Status: Locked for pre-repo planning
 Owner: Project team
-Updated: 2026-03-11
+Updated: 2026-03-23
 
 This document is the single source of truth for locked MVP scope and implementation decisions.
 
@@ -12,7 +12,7 @@ Ship a funny, fast, multiplayer pixel-art RPG where players pick premade food ch
 
 ## MVP Scope (In)
 
-1. Native desktop client (Go + raylib-go, backed by raylib) and authoritative Go server.
+1. Native desktop client (Rust + `raylib`/`raylib-rs`) and authoritative Rust server (`axum` + `tokio`).
 2. Story engine driven by JSON (no story-specific hardcoded logic).
 3. d100 dice system with locked rule set:
    - stat range `5..70`
@@ -54,8 +54,9 @@ Ship a funny, fast, multiplayer pixel-art RPG where players pick premade food ch
 
 ## Locked Architecture Decisions
 
-- HTTP router: `github.com/go-chi/chi/v5`
-- WebSocket library: `github.com/coder/websocket`
+- HTTP/router stack: `axum` + `tower`
+- Async runtime: `tokio`
+- WebSocket transport: `axum` WebSockets
 - Production transport: `wss://` (TLS terminated by reverse proxy)
 - Local development transport: `ws://localhost`
 - WebSocket payload for MVP: JSON
@@ -151,10 +152,10 @@ Audio channels for v1:
 - Main repo (`les-perissables`): add `COPYRIGHT`, ARR `LICENSE`, `README.md` on day 1
 - Stories repo (`les-perissables-stories`): add MIT `LICENSE`, `README.md` on day 1
 - Minimum CI checks on first commit:
-  - `go test ./...`
-  - `go vet ./...`
-  - `staticcheck ./...`
-  - `go tool govulncheck ./...`
+  - `cargo fmt --all --check`
+  - `cargo clippy --all-targets --all-features -- -D warnings`
+  - `cargo test --all-features`
+  - `cargo audit`
 
 ## Privacy And Data Minimization
 

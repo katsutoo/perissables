@@ -9,7 +9,7 @@ These estimates assume one developer, controlled scope, and strict phase discipl
 | Vertical slice | 00-07 | One map, one story, checks, first combat slice | 3-6 weeks |
 | Playable MVP | 00-13 | Core multiplayer, three themes, stable lobby-to-run loop | 2-4 months |
 | Release-ready | 14-18 | Reconnect robustness, creator tooling, QA, Steam-ready builds | 4-8 months |
-| Community hub | 19-20 | Separate website for sharing and moderating packs | 3-8 weeks |
+| Community hub | 19-20 | Landing page, then accounts + pack sharing/likes/comments + moderation (separate repo) | 3-8 weeks |
 
 ## How To Use This Roadmap
 
@@ -114,7 +114,7 @@ Tune the game, profile hot paths, and harden regression coverage.
 
 ### Release And Community Follow-Through (18-20)
 
-These phases cover shipping, then optional community infrastructure after the core game is ready.
+These phases cover shipping, then the community hub (a committed follow-on built soon after the core game is ready).
 
 ### Phase 18 - Steam Packaging
 
@@ -122,11 +122,11 @@ Prepare reproducible release builds, Steamworks integration, and release operati
 
 ### Phase 19 - Community Hub Foundation
 
-Create a separate web repo for pack discovery and download.
+Create a separate web repo (`les-perissables-hub`), built as a Rust `axum` + `maud` + `htmx` app on Railway with a Railway Postgres database via `sqlx`. Stage 1 is a simple landing page (domain, Steam/wishlist link, community links) that may ship before launch. Stage 2, released soon after the game, adds accounts (Discord/GitHub OAuth), pack sharing for Tier 1 (reuse-only) packs, likes, comments, and sort-by-likes. The hub serves data packs only, never runtime binaries; reuse `storycheck`/`shared` for upload validation.
 
 ### Phase 20 - Moderation And Trust
 
-Add moderation policy, abuse controls, and minimal admin tooling for community content.
+Because the hub hosts user-generated content (shared packs, likes, comments), moderation and privacy ship with the Stage 2 launch, not later: publish a moderation policy and privacy policy, add report/flag plus admin delete/ban actions, anti-spam/upload limits, and account/content deletion. Once asset/format validation is also in place, enable Tier 2 (original-asset) packs.
 
 ## Definition Of Done For Every Phase
 

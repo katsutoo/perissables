@@ -103,6 +103,44 @@ Define environment-facing presentation: tileset, ambience, combat backdrop, musi
 
 Define pack identity, version, checksum, and included content references so multiplayer sessions can verify compatibility.
 
+## Creator Freedom Tiers
+
+Creator-authored content rolls out in two tiers so the game can ship a consistent, low-moderation experience first and open up full customization once hub tooling exists.
+
+### Tier 1 - Reuse Only (first creator release)
+
+Creators author with the assets the game already ships:
+
+- New stories: branching, choices, checks, encounters, dialogue, flavor.
+- New characters: new stat lines and spell loadouts drawn from existing spells, using existing sprites.
+- Existing themes only: pick from the shipped themes (supermarket, garden, storage_room).
+
+No new asset files are added, so every pack looks and sounds on-brand, plays cleanly in multiplayer, and needs only schema validation. This is the recommended default and covers the large majority of "make your own adventure" cases without any art skill.
+
+### Tier 2 - Original Assets (later)
+
+Creators may additionally ship their own presentation so a pack fully matches its own setting (for example a haunted mansion or a space station rather than a grocery store):
+
+- Original tilesets, maps, character sprites, music, ambience, SFX, and combat backdrops.
+- Original UI/theme manifests (visual skin variants).
+
+All original assets must conform to the locked conventions in `docs/mvp_contract.md` (16x16 tiles, sprite frame order/naming, TMX layer/object rules, audio formats and sample rate). Tier 2 is enabled only after the community hub has submission rules, asset/format validation, and moderation/abuse controls, because arbitrary uploaded art and audio raise moderation, licensing/IP, distribution, and untrusted-file-handling concerns.
+
+The schema supports custom asset references from the start (see the theme manifest example above), so enabling Tier 2 is a hub/policy rollout, not an engine change.
+
+## Presentation vs Engine Boundary
+
+A simple rule governs what creators can and cannot change:
+
+- Data (creator-controllable): presentation (tilesets, sprites, audio, backdrops, UI skins) and narrative (story branching, checks, encounters, character stat/spell composition, flavor text).
+- Engine (fixed, proprietary): combat rules, the d100 dice system and its locked limits, spell behaviors/effects, and UI behavior (visual skinning only, per the MVP non-goals).
+
+Creators re-author and reskin the world to fit their own idea, but they play by the same rules and reuse the engine's spell/effect library. New mechanics or new spell effects require engine support and are out of scope for data packs.
+
+## Sharing And Attribution
+
+Packs are shared through the community hub (`les-perissables-hub`), where creators sign in with Discord or GitHub. The uploading account owns its packs (it can update or remove them) and is the attribution shown to other players, who can like and comment on packs. See `docs/mvp_contract.md` for the hub's locked stack, hosting, identity, moderation, and privacy decisions.
+
 ## Repo Boundary
 
 Planned split:

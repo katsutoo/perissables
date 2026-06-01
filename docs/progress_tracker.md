@@ -25,7 +25,11 @@ This tracker is intentionally detailed. Use `docs/mvp_contract.md` for locked MV
 - [x] LOCK-17 Community content/licensing boundary fixed: MIT data packs plus ARR runtime/assets
 - [x] LOCK-18 Save path conventions fixed: Linux `~/.local/share/les-perissables/`, Windows `%AppData%/LesPerissables/`
 - [x] LOCK-19 Privacy baseline fixed: minimum data, no default telemetry, opt-in crash upload if added later
-- [x] LOCK-20 Community website plan fixed: separate repo (`les-perissables-hub`) in post-MVP phases
+- [x] LOCK-20 Community website plan fixed: separate repo (`les-perissables-hub`), post-MVP, two stages (landing page first, then community hub soon after game launch); data packs only, no runtime binaries
+- [x] LOCK-21 Creator content tiers fixed: Tier 1 reuse-only at first release, Tier 2 original assets later (gated on hub moderation + asset validation); presentation/narrative are data, rules/spell-behaviors/UI-behavior stay in the engine
+- [x] LOCK-22 Hub stack/hosting/data fixed: Rust `axum` + `maud` + `htmx`, deployed on Railway, Railway Postgres via `sqlx` with migrations; PlanetScale as switch-later option (not Neon); Toasty deferred until post-1.0
+- [x] LOCK-23 Hub identity fixed: accounts via Discord + GitHub OAuth only (no homegrown email/password); store opaque provider ID + display name; uploading account owns/attributes its packs
+- [x] LOCK-24 Hub is a UGC social platform: share packs, like, comment, sort-by-likes; moderation (report/flag, admin delete/ban, anti-spam) and privacy (policy + account/content deletion) ship at Stage 2 launch
 
 ## Phase 00 - Foundation And Scope Freeze
 
@@ -220,16 +224,23 @@ This tracker is intentionally detailed. Use `docs/mvp_contract.md` for locked MV
 
 ## Phase 19 - Community Web Hub Foundation (Separate Repo)
 
-- [ ] 19.1 Create separate repository `les-perissables-hub`
-- [ ] 19.2 Add pack listing pages and metadata model (`pack_id`, `version`, `checksum`, `tags`)
-- [ ] 19.3 Add safe pack download flow (data packs only)
-- [ ] 19.4 Add creator-doc links plus validator-integration guidance
-- [ ] 19.5 Phase 19 complete
+- [ ] 19.1 Create separate repository `les-perissables-hub`; scaffold Rust `axum` + `maud` + `htmx` app deployed on Railway
+- [ ] 19.2 Ship Stage 1 landing page (domain, Steam/wishlist link, community links; content-only, no accounts) - may go live before game launch
+- [ ] 19.3 Add Railway Postgres + `sqlx` with migrations; define account/pack/like/comment schema
+- [ ] 19.4 Add authentication via Discord + GitHub OAuth (store provider ID + display name)
+- [ ] 19.5 Add pack sharing/upload flow owned by the uploading account (Tier 1 reuse-only; no runtime binaries), with `storycheck`/`shared` validation
+- [ ] 19.6 Add pack listing pages and metadata model (`pack_id`, `version`, `checksum`, `tags`)
+- [ ] 19.7 Add safe pack download flow
+- [ ] 19.8 Add likes, comments, and sort/browse-by-likes
+- [ ] 19.9 Add creator-doc links plus validator-integration guidance
+- [ ] 19.10 Phase 19 complete
 
 ## Phase 20 - Community Moderation And Trust
 
-- [ ] 20.1 Publish moderation policy and submission rules
-- [ ] 20.2 Add report/flag flow and basic admin moderation actions
+- [ ] 20.1 Publish moderation policy and submission rules (including original-asset licensing/IP rules)
+- [ ] 20.2 Add report/flag flow plus admin moderation actions (delete content, ban accounts)
 - [ ] 20.3 Add anti-spam/abuse controls and upload limits
-- [ ] 20.4 Publish website privacy policy (minimal data handling)
-- [ ] 20.5 Phase 20 complete
+- [ ] 20.4 Publish privacy policy and support account/content deletion (minimal data handling)
+- [ ] 20.5 Add asset/format validation for uploads (dimensions, frame counts, formats, sizes, checksums)
+- [ ] 20.6 Enable Tier 2 (original-asset) packs once moderation + asset validation are in place
+- [ ] 20.7 Phase 20 complete

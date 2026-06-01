@@ -164,12 +164,21 @@ Audio channels for v1:
 - No in-game voice chat and no voice recording storage.
 - Use only gameplay-required platform/session identifiers.
 - If crash upload is added, it must be opt-in and clearly documented.
+- Community hub (separate context): the hub collects account data and user-generated content - OAuth provider IDs, display names, shared packs, likes, and comments - which is distinct from the game's minimal-PII stance. The hub must publish a privacy policy, store only what these features require, and support account and content deletion.
 
 ## Community Website (Post-MVP)
 
-- Build website as separate repo: `les-perissables-hub`.
-- Purpose: host/discover community data packs, not runtime binaries.
-- Website should have moderation policy, abuse controls, and a simple privacy page.
+- Build website as separate repo: `les-perissables-hub`. Keeping it separate preserves the boundary between the ARR game runtime and a public, content-facing site.
+- Roll it out in two stages inside that repo:
+  - Stage 1 (may ship before the game launches): a simple landing page that points the domain at the project, links the Steam page/wishlist, and links community channels (e.g. Discord). Content-only: no accounts.
+  - Stage 2 (released soon after the game ships): a community hub where players sign in, share content packs, and discover others' packs.
+- Hub purpose: host/discover community data packs (story/character/theme packs), not runtime binaries. Players still need to own the game on Steam to run any pack.
+- The hub is a user-generated-content (UGC) social platform: signed-in users can share packs, like them, comment on them, and sort/browse by likes.
+- Identity (locked): authentication via Discord and GitHub OAuth only - no homegrown email/password system. Store an opaque provider ID plus display name; the uploading account owns its packs (edit/delete) and is the attribution shown to others.
+- Moderation is a launch requirement, not a later add-on: report/flag flow, admin delete/ban actions, and anti-spam/upload limits ship with the Stage 2 launch.
+- Privacy is a launch requirement: publish a privacy policy and support account/content deletion. See "Privacy And Data Minimization" for how the hub's data handling differs from the game.
+- Locked tech stack: Rust `axum` + `maud` (server-rendered HTML) + `htmx` (interactivity), as one app that starts as the Stage 1 landing page and grows into the Stage 2 hub, reusing the `storycheck`/`shared` pack-validation logic.
+- Locked hosting/data: deploy on Railway; database is Railway Postgres accessed via `sqlx` with migrations. If the database is ever outgrown, switch to PlanetScale (Postgres); Neon is explicitly not used. Toasty ORM was evaluated and deferred until it is post-1.0/stable.
 
 ## Community Content And Licensing Boundary
 
@@ -195,6 +204,14 @@ Important runtime rule:
 - Users still need the game install/ownership to run packs.
 - Multiplayer sessions require matching `pack_id`, `version`, and checksum across players.
 - Pack manifest support must include `pack_id`, `version`, and checksum validation in tooling/runtime checks.
+
+Creator content tiers (rollout):
+
+- Tier 1 (reuse-only) at first creator release: packs may add new stories, new character stat/spell combinations, and flavor, but must reference already-shipped maps, themes, sprites, audio, and spells. No new asset files. This keeps packs instantly consistent and minimizes moderation/validation load.
+- Tier 2 (original assets) later: packs may also ship original tilesets, sprites, maps, audio, combat backdrops, and UI/theme manifests, conforming to the locked asset/TMX conventions above. Enabled only once the hub has submission rules, asset/format validation, and the moderation/abuse controls from the community website plan.
+- The story/theme/character schema must allow custom asset references from day one so Tier 2 needs no re-architecture; the rollout gates uploads/acceptance, not engine capability.
+- Engine boundary (unchanged by either tier): presentation (art, audio, UI skin) and narrative (story branching, checks, encounters, character stat/spell composition) are data; combat rules, the d100 system, spell behaviors, and UI behavior remain in the proprietary engine. Creators reskin and re-author the world; they do not change how the game plays.
+- Sharing/attribution: packs are shared through an authenticated hub account (Discord/GitHub); the uploading account owns and can update/remove its packs and is the displayed attribution. Other signed-in users can like and comment on packs.
 
 ## Milestone Exit Criteria
 

@@ -30,6 +30,8 @@ This tracker is intentionally detailed. Use `docs/mvp_contract.md` for locked MV
 - [x] LOCK-22 Hub stack/hosting/data fixed: Rust `axum` + `maud` + `htmx`, deployed on Railway, Railway Postgres via `sqlx` with migrations; PlanetScale as switch-later option (not Neon); Toasty deferred until post-1.0
 - [x] LOCK-23 Hub identity fixed: accounts via Discord + GitHub OAuth only (no homegrown email/password); store opaque provider ID + display name; uploading account owns/attributes its packs
 - [x] LOCK-24 Hub is a UGC social platform: share packs, like, comment, sort-by-likes; moderation (report/flag, admin delete/ban, anti-spam) and privacy (policy + account/content deletion) ship at Stage 2 launch
+- [x] LOCK-25 Hub license fixed: `les-perissables-hub` ships proprietary (ARR) like the game (`COPYRIGHT` + ARR `LICENSE` on repo creation); independent of the MIT data packs it serves and the MIT schema/validation crate it depends on
+- [x] LOCK-26 Hub storage/CDN fixed: pack/asset files in Cloudflare R2 (S3-compatible, zero-egress) with presigned uploads and validate-before-publish (private -> validate -> public); Cloudflare DNS/CDN in front of the Railway app; app + Postgres stay on Railway (not Cloudflare Workers/D1)
 
 ## Phase 00 - Foundation And Scope Freeze
 
@@ -74,9 +76,9 @@ This tracker is intentionally detailed. Use `docs/mvp_contract.md` for locked MV
 
 ## Phase 04 - Story Schema v1 (Core)
 
-- [ ] 04.1 Define schema files for story metadata, events, choices, checks, encounters
-- [ ] 04.2 Implement Rust structs in `crates/game_core/src/story` matching schema fields
-- [ ] 04.3 Implement loader with strict validation and helpful path-based errors
+- [ ] 04.1 Define the pack schema (story metadata, events, choices, checks, encounters) in the MIT schema/validation crate in `les-perissables-stories` - the single source of truth
+- [ ] 04.2 Implement the schema Rust structs + loader/validation in that MIT crate (strict validation, helpful path-based errors)
+- [ ] 04.3 Have `game_core` depend on the MIT crate for the data model; its `story/` module holds runtime logic, not the schema definition
 - [ ] 04.4 Add table-driven tests for valid/invalid story files
 - [ ] 04.5 Add one canonical example story in `stories/builtin/`
 - [ ] 04.6 Phase 04 complete
@@ -184,7 +186,7 @@ This tracker is intentionally detailed. Use `docs/mvp_contract.md` for locked MV
 
 ## Phase 15 - Content Tooling For Story Creators
 
-- [ ] 15.1 Create `crates/storycheck` CLI for story/character/theme schema and reference validation
+- [ ] 15.1 Build the `crates/storycheck` CLI on top of the existing MIT schema/validation crate (from Phase 04) for story/character/theme schema and reference validation
 - [ ] 15.2 Validate cross-file references (story -> character -> theme -> assets)
 - [ ] 15.3 Add pack manifest checks (`pack_id`, `version`, `checksum`)
 - [ ] 15.4 Add `--dry-run` graph walk for branching reachability and dead ends
@@ -224,16 +226,20 @@ This tracker is intentionally detailed. Use `docs/mvp_contract.md` for locked MV
 
 ## Phase 19 - Community Web Hub Foundation (Separate Repo)
 
-- [ ] 19.1 Create separate repository `les-perissables-hub`; scaffold Rust `axum` + `maud` + `htmx` app deployed on Railway
-- [ ] 19.2 Ship Stage 1 landing page (domain, Steam/wishlist link, community links; content-only, no accounts) - may go live before game launch
-- [ ] 19.3 Add Railway Postgres + `sqlx` with migrations; define account/pack/like/comment schema
-- [ ] 19.4 Add authentication via Discord + GitHub OAuth (store provider ID + display name)
-- [ ] 19.5 Add pack sharing/upload flow owned by the uploading account (Tier 1 reuse-only; no runtime binaries), with `storycheck`/`shared` validation
-- [ ] 19.6 Add pack listing pages and metadata model (`pack_id`, `version`, `checksum`, `tags`)
-- [ ] 19.7 Add safe pack download flow
-- [ ] 19.8 Add likes, comments, and sort/browse-by-likes
-- [ ] 19.9 Add creator-doc links plus validator-integration guidance
-- [ ] 19.10 Phase 19 complete
+- [ ] 19.1 Create separate repository `les-perissables-hub` with legal files on day 1 (`COPYRIGHT` + ARR `LICENSE`); scaffold Rust `axum` + `maud` + `htmx` app
+- [ ] 19.2 Add hub CI baseline (`cargo fmt --all --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-features`, `cargo audit`, plus an sqlx migration check)
+- [ ] 19.3 Deploy on Railway; wire the domain via Cloudflare DNS/CDN with TLS in front of the Railway app
+- [ ] 19.4 Configure secrets/env (Discord + GitHub OAuth credentials, `DATABASE_URL`, session signing key, R2 credentials)
+- [ ] 19.5 Ship Stage 1 landing page (domain, Steam/wishlist link, community links; content-only, no accounts) - may go live before game launch
+- [ ] 19.6 Add Railway Postgres + `sqlx` with migrations and backups; define account/pack/like/comment schema
+- [ ] 19.7 Add authentication via Discord + GitHub OAuth (store provider ID + display name)
+- [ ] 19.8 Add Cloudflare R2 storage (S3-compatible) with presigned uploads and a validate-before-publish flow (private bucket -> validate -> public); Tier 1 runs schema validation, with asset/format checks added when Tier 2 lands (Phase 20)
+- [ ] 19.9 Add pack sharing/upload flow owned by the uploading account (Tier 1 reuse-only; no runtime binaries), validated with the MIT pack schema/validation crate
+- [ ] 19.10 Add pack listing pages and metadata model (`pack_id`, `version`, `checksum`, `tags`)
+- [ ] 19.11 Add safe pack download flow (served from R2 via CDN)
+- [ ] 19.12 Add likes, comments, and sort/browse-by-likes
+- [ ] 19.13 Add creator-doc links plus validator-integration guidance
+- [ ] 19.14 Phase 19 complete
 
 ## Phase 20 - Community Moderation And Trust
 

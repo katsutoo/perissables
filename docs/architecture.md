@@ -109,6 +109,8 @@ tests/
   testutil/
 ```
 
+The `storycheck` crate here is the CLI front-end. The reusable pack schema and validation rules it enforces live as an MIT library crate in the separate `les-perissables-stories` repo, so the game, `storycheck`, and the community hub all validate packs through the same code without sharing proprietary game-repo crates.
+
 ## Engineering Practices
 
 - Standard library first, minimal crates beyond clear wins.

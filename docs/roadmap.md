@@ -122,7 +122,7 @@ Prepare reproducible release builds, Steamworks integration, and release operati
 
 ### Phase 19 - Community Hub Foundation
 
-Create a separate web repo (`les-perissables-hub`), built as a Rust `axum` + `maud` + `htmx` app on Railway with a Railway Postgres database via `sqlx`. Stage 1 is a simple landing page (domain, Steam/wishlist link, community links) that may ship before launch. Stage 2, released soon after the game, adds accounts (Discord/GitHub OAuth), pack sharing for Tier 1 (reuse-only) packs, likes, comments, and sort-by-likes. The hub serves data packs only, never runtime binaries; reuse `storycheck`/`shared` for upload validation.
+Create a separate web repo (`les-perissables-hub`), built as a Rust `axum` + `maud` + `htmx` app on Railway with a Railway Postgres database via `sqlx`. Stage 1 is a simple landing page (domain, Steam/wishlist link, community links) that may ship before launch. Stage 2, released soon after the game, adds accounts (Discord/GitHub OAuth), pack sharing for Tier 1 (reuse-only) packs, likes, comments, and sort-by-likes. The hub serves data packs only, never runtime binaries; for upload validation it depends on the MIT pack schema/validation crate from `les-perissables-stories` (not on proprietary game-repo crates). Pack/asset files are stored in Cloudflare R2 (zero-egress) behind a validate-before-publish flow, with Cloudflare providing DNS/CDN in front of the Railway app; the hub itself ships proprietary (ARR), like the game.
 
 ### Phase 20 - Moderation And Trust
 

@@ -124,7 +124,7 @@ Creators may additionally ship their own presentation so a pack fully matches it
 - Original tilesets, maps, character sprites, music, ambience, SFX, and combat backdrops.
 - Original UI/theme manifests (visual skin variants).
 
-All original assets must conform to the locked conventions in `docs/mvp_contract.md` (16x16 tiles, sprite frame order/naming, TMX layer/object rules, audio formats and sample rate). Tier 2 is enabled only after the community hub has submission rules, asset/format validation, and moderation/abuse controls, because arbitrary uploaded art and audio raise moderation, licensing/IP, distribution, and untrusted-file-handling concerns.
+All original assets must conform to the locked conventions in `docs/mvp-contract.md` (16x16 tiles, sprite frame order/naming, TMX layer/object rules, audio formats and sample rate). Tier 2 is enabled only after the community hub has submission rules, asset/format validation, and moderation/abuse controls, because arbitrary uploaded art and audio raise moderation, licensing/IP, distribution, and untrusted-file-handling concerns.
 
 The schema supports custom asset references from the start (see the theme manifest example above), so enabling Tier 2 is a hub/policy rollout, not an engine change.
 
@@ -139,7 +139,7 @@ Creators re-author and reskin the world to fit their own idea, but they play by 
 
 ## Sharing And Attribution
 
-Packs are shared through the community hub (`les-perissables-hub`), where creators sign in with Discord or GitHub. The uploading account owns its packs (it can update or remove them) and is the attribution shown to other players, who can like and comment on packs. See `docs/mvp_contract.md` for the hub's locked stack, hosting, identity, moderation, and privacy decisions.
+Packs are shared through the community hub (`les-perissables-hub`), where creators sign in with Discord or GitHub. The uploading account owns its packs (it can update or remove them) and is the attribution shown to other players, who can like and comment on packs. See `docs/mvp-contract.md` for the hub's locked stack, hosting, identity, moderation, and privacy decisions.
 
 ## Repo Boundary
 
@@ -154,7 +154,7 @@ The reusable pack schema and validation rules live as an MIT library crate in `l
 
 ## Compatibility Rule
 
-Multiplayer sessions should require matching `pack_id`, `version`, and checksum across all players before a run starts. Exact validation rules stay locked in `docs/mvp_contract.md`.
+Multiplayer sessions should require matching `pack_id`, `version`, and checksum across all players before a run starts. Exact validation rules stay locked in `docs/mvp-contract.md`.
 
 ## Authoring Principles
 

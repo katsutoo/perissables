@@ -12,17 +12,17 @@ The project works because the joke is loud but the scope is disciplined:
 ## Read The Docs By Intent
 
 - For the product vision and concrete content examples, read `docs/product.md`.
-- For exact MVP locks and non-goals, read `docs/mvp_contract.md`.
+- For exact MVP locks and non-goals, read `docs/mvp-contract.md`.
 - For technical stack and codebase structure, read `docs/architecture.md`.
 - For multiplayer model and authority boundaries, read `docs/networking.md`.
 - For story/theme/character pack design, read `docs/content-packs.md`.
 - For delivery planning and known risks, read `docs/roadmap.md`.
-- For delivery status and phase completion tracking, read `docs/progress_tracker.md`.
-- For release and pricing notes, read `docs/release_notes.md`.
+- For delivery status and phase completion tracking, read `docs/progress-tracker.md`.
+- For release and pricing notes, read `docs/release-notes.md`.
 
 ## Document Boundary
 
-`docs/mvp_contract.md` is the single source of truth for locked MVP decisions. The other docs are for explanation, examples, rationale, and planning.
+`docs/mvp-contract.md` is the single source of truth for locked MVP decisions. The other docs are for explanation, examples, rationale, and planning.
 
 ## Why This Shape
 

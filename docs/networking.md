@@ -23,7 +23,7 @@ That model fits the project well because it keeps co-op sync readable, limits ch
 
 ## Message Shape
 
-All gameplay traffic follows one shared envelope shape, with message-specific payloads inside it. Exact field requirements, allowed message types, sequence rules, and size/rate limits are locked in `docs/mvp_contract.md`.
+All gameplay traffic follows one shared envelope shape, with message-specific payloads inside it. Exact field requirements, allowed message types, sequence rules, and size/rate limits are locked in `docs/mvp-contract.md`.
 
 For design purposes, the important rule is:
 

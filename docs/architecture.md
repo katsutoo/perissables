@@ -18,7 +18,7 @@
 | Story content | JSON + validator tooling | Story definitions, branching events, encounters, metadata |
 | Theme system | Asset manifests + per-theme packs | Tilesets, ambience, combat backdrops, UI skin references |
 | Error handling | `thiserror` + `anyhow` | Domain errors plus startup/tooling context with explicit boundaries |
-| Quality baseline | `cargo fmt --all --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-features`, `cargo audit` | Reliability and security hygiene |
+| Quality baseline | `cargo fmt --all --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-features`, `cargo audit` | Reliability and security hygiene (`cargo audit` requires `cargo install cargo-audit` or `cargo binstall cargo-audit`) |
 | Release automation | GoReleaser | Tagged Linux/Windows builds, packaging, checksums |
 | Distribution | Steam + Steamworks SDK | Lobbies, invites, achievements, native distribution |
 
@@ -123,4 +123,4 @@ The `storycheck` crate here is the CLI front-end. The reusable pack schema and v
 
 ## Where Locks Live
 
-This document explains the architecture, but exact locked MVP decisions such as protocol limits, release targets, save-path rules, and schema versioning live only in `docs/mvp_contract.md`.
+This document explains the architecture, but exact locked MVP decisions such as protocol limits, release targets, save-path rules, and schema versioning live only in `docs/mvp-contract.md`.

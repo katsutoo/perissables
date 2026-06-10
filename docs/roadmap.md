@@ -15,8 +15,8 @@ These estimates assume one developer, controlled scope, and strict phase discipl
 
 - Build in order. Each phase should leave the project in a playable, testable, or clearly reviewable state.
 - Do not pull later-phase work forward unless an earlier phase is blocked without it.
-- Keep exact MVP locks in `docs/mvp_contract.md`; use this file for sequencing and planning.
-- Use `docs/progress_tracker.md` as the detailed checkbox board for completion tracking.
+- Keep exact MVP locks in `docs/mvp-contract.md`; use this file for sequencing and planning.
+- Use `docs/progress-tracker.md` as the detailed checkbox board for completion tracking.
 
 ## Phase Plan
 
@@ -145,4 +145,4 @@ Because the hub hosts user-generated content (shared packs, likes, comments), mo
 
 ## Tracking Note
 
-This document keeps the roadmap at the planning level. Use `docs/progress_tracker.md` as the built-in execution checklist, and move day-to-day implementation detail into issues or a project board if the tracker becomes too granular.
+This document keeps the roadmap at the planning level. Use `docs/progress-tracker.md` as the built-in execution checklist, and move day-to-day implementation detail into issues or a project board if the tracker becomes too granular.

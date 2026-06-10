@@ -15,6 +15,10 @@ Status: exploratory business and release notes, not the source of locked impleme
 
 - Current pricing idea: around `2-3 EUR`.
 
+## When to Update This File
+
+Add a dated entry whenever a business, pricing, distribution, or release decision changes, even if it does not affect the MVP contract. This keeps release context separate from engineering scope without letting decisions disappear into chat history.
+
 ## Rule
 
-If a release or business decision affects engineering scope in a hard way, copy the locked part into `docs/mvp_contract.md`. Otherwise it stays here.
+If a release or business decision affects engineering scope in a hard way, copy the locked part into `docs/mvp-contract.md`. Otherwise it stays here.

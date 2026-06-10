@@ -73,7 +73,7 @@ The core rule is simple: the engine stays shared, while flavor comes from data p
 
 Combat is turn-based, dice-driven, and intentionally compact. Characters have preset stats and spells. Encounters come from story data, not hardcoded scene scripts.
 
-The game uses a d100-style system with intentionally unusual critical extremes for flavor. Exact rule definitions, resolution order, and locked limits live in `docs/mvp_contract.md`.
+The game uses a d100-style system with intentionally unusual critical extremes for flavor. Exact rule definitions, resolution order, and locked limits live in `docs/mvp-contract.md`.
 
 ## Platform And Release Shape
 
@@ -81,4 +81,4 @@ The game uses a d100-style system with intentionally unusual critical extremes f
 - Multiplayer is online through an authoritative server.
 - Steam-first distribution is the expected path.
 
-Pricing, platform-release notes, and other business-facing decisions live in `docs/release_notes.md` so they do not muddy core product and engineering docs.
+Pricing, platform-release notes, and other business-facing decisions live in `docs/release-notes.md` so they do not muddy core product and engineering docs.

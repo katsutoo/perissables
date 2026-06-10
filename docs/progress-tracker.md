@@ -2,7 +2,7 @@
 
 Use this checklist as the execution board. Tick boxes as work is completed.
 
-This tracker is intentionally detailed. Use `docs/mvp_contract.md` for locked MVP decisions, `docs/roadmap.md` for sequencing and phase grouping, and this file for step-by-step execution status.
+This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MVP decisions, `docs/roadmap.md` for sequencing and phase grouping, and this file for step-by-step execution status.
 
 ## Pre-Implementation Lock Checklist
 
@@ -35,7 +35,7 @@ This tracker is intentionally detailed. Use `docs/mvp_contract.md` for locked MV
 
 ## Phase 00 - Foundation And Scope Freeze
 
-- [x] 00.1 Write `docs/mvp_contract.md` with goals, non-goals, and "not in MVP" list
+- [x] 00.1 Write `docs/mvp-contract.md` with goals, non-goals, and "not in MVP" list
 - [x] 00.2 Freeze core constraints: party size (`4`), tile size (`16x16`), target FPS (`60`), target resolutions (`1280x720`, `1920x1080`)
 - [x] 00.3 Freeze dice/check rules (`d100`, stat range `5-70`, `000` crit success, `100` crit fail)
 - [x] 00.4 Freeze networking scope for MVP (hosted server, no peer-to-peer)

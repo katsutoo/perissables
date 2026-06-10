@@ -87,6 +87,8 @@ All messages must use:
 
 Required fields are mandatory. Unknown message types, missing fields, stale/duplicate sequence numbers, and unsupported schema versions are rejected.
 
+Bootstrap exception: a first `join` is sent before the server has issued IDs. For `join` only, `session_id` and `player_id` are empty strings; the server's join response issues the real values, which are mandatory on every later message (including `rejoin`).
+
 Allowed `type` values for v1:
 
 - `join`
@@ -236,4 +238,4 @@ Creator content tiers (rollout):
 - Any feature outside this contract is added to post-MVP backlog.
 - Scope changes only happen between phases, never inside an active phase.
 - If scope grows, timeline updates must be acknowledged before coding continues.
-- Pricing and other business-facing release notes belong in `docs/release_notes.md` unless they become locked MVP constraints.
+- Pricing and other business-facing release notes belong in `docs/release-notes.md` unless they become locked MVP constraints.

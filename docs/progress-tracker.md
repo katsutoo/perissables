@@ -51,8 +51,9 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 - [ ] 01.4 Add `mise` tasks in `mise.toml`: `run-client`, `run-server`, `test`, `lint`, `security-scan`
 - [ ] 01.5 Add baseline checks (`cargo fmt --all --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-features`, `cargo audit`)
 - [ ] 01.6 Add legal files (`COPYRIGHT`, ARR `LICENSE`) in main repo scaffold
-- [ ] 01.7 Add starter CI workflow at `.github/workflows/ci.yml` with locked baseline checks
-- [ ] 01.8 Phase 01 complete
+- [ ] 01.7 Create `les-perissables-stories` repo with MIT `LICENSE` and `README.md` (hosts the schema/validation crate `game_core` depends on from Phase 04)
+- [ ] 01.8 Add starter CI workflow at `.github/workflows/ci.yml` with locked baseline checks
+- [ ] 01.9 Phase 01 complete
 
 ## Phase 02 - Render Loop And Scene Skeleton
 

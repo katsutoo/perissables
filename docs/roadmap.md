@@ -30,7 +30,7 @@ Lock MVP scope, non-goals, and completion criteria before code starts.
 
 ### Phase 01 - Repo Bootstrap
 
-Create the Rust workspace, client/server entrypoints, logging, legal files, and CI baseline.
+Create the Rust workspace, client/server entrypoints, logging, legal files, CI baseline, and the `les-perissables-stories` repo (MIT, needed by Phase 04).
 
 ### Phase 02 - Render Loop And Scene Skeleton
 

@@ -52,6 +52,16 @@
 - Broadcast authoritative state snapshots and semantic events.
 - Handle reconnect, resync, and multiplayer session lifecycle.
 
+## Headless game_core Rule
+
+Phases 03-09 build gameplay before Phase 13 moves authority server-side. That migration stays a relocation instead of a rewrite only if `game_core` is headless from day one:
+
+- No `raylib` types, rendering, input, or audio dependencies anywhere in `game_core`.
+- All randomness injected (seeded RNG passed in), never created internally.
+- State advances only through explicit intents and returns events/results; the client renders from those, it never reaches into game logic.
+
+If a phase 03-09 feature is tempting to implement in the client "just for now", it goes in `game_core` behind an intent instead.
+
 ## Intended Project Structure
 
 ```text

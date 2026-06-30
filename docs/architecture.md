@@ -13,6 +13,7 @@
 | --- | --- | --- |
 | Game client | Rust + `raylib` (`raylib-rs`) | Windowing, render loop, input, scene transitions, UI drawing, audio hooks |
 | Game server | Rust + `axum` + `tokio` + `tower` | Routing, middleware, health endpoints, session orchestration |
+| Game server hosting | Railway service, single active instance per environment for MVP | Staging/production deployment, WSS endpoint, health/readiness checks, structured operational logs |
 | Networking | `axum` WebSockets on `tokio` | Client input transport and authoritative state/event updates |
 | Serialization | `serde` + `serde_json` | Protocol payloads, story parsing, save/load data, tooling I/O |
 | Story content | JSON + validator tooling | Story definitions, branching events, encounters, metadata |

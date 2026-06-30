@@ -31,6 +31,12 @@ For design purposes, the important rule is:
 - payload varies by message type
 - unknown or stale messages are rejected
 
+For implementation, keep client->server and server->client message directions explicit. `join_response` is the server message that issues `session_id`, `player_id`, and the opaque reconnect credential; `rejoin` must present that credential and receive `resync_state` before new gameplay input is accepted.
+
+## Production Session Discovery
+
+Steam lobbies and invites are discovery UX, not gameplay authority. A lobby points players at the hosted authoritative server session by carrying metadata such as the WebSocket URL, `session_id`, protocol/schema versions, and pack identity/checksum. The server still validates Steam auth/session tickets, issues player credentials, and owns all state transitions.
+
 ## Authority Boundaries
 
 The server owns:
@@ -65,6 +71,7 @@ Reconnect matters because short co-op runs feel bad if one temporary disconnect 
 The plan is:
 
 - issue session/rejoin credentials during join flow
+- keep reconnect tokens opaque, server-generated, and out of Steam lobby metadata
 - require a reconnect handshake before accepting new input
 - send a full authoritative resync before returning a player to active play
 - reject out-of-order or replayed input after reconnect

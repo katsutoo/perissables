@@ -17,6 +17,7 @@ Example story metadata:
 
 ```json
 {
+  "schema_version": 1,
   "id": "cleanup_on_aisle_9",
   "title": "Cleanup on Aisle 9",
   "theme_id": "supermarket",
@@ -48,6 +49,7 @@ Example character preset:
 
 ```json
 {
+  "schema_version": 1,
   "id": "banana_rogue",
   "name": "Banana Rogue",
   "group": "fruit",
@@ -66,6 +68,7 @@ Example theme manifest:
 
 ```json
 {
+  "schema_version": 1,
   "theme_id": "storage_room",
   "tileset": "tileset_storage_room.png",
   "ambience": "music_storage_room_hum.ogg",
@@ -78,6 +81,7 @@ Example pack manifest:
 
 ```json
 {
+  "schema_version": 1,
   "pack_id": "cleanup-pack",
   "version": "1.0.0",
   "checksum": "sha256:...",
@@ -101,7 +105,7 @@ Define environment-facing presentation: tileset, ambience, combat backdrop, musi
 
 ### Pack Manifests
 
-Define pack identity, version, checksum, and included content references so multiplayer sessions can verify compatibility.
+Define pack identity, version, schema version, checksum, and included content references so multiplayer sessions can verify compatibility.
 
 ## Creator Freedom Tiers
 
@@ -154,7 +158,7 @@ The reusable pack schema and validation rules live as an MIT library crate in `l
 
 ## Compatibility Rule
 
-Multiplayer sessions should require matching `pack_id`, `version`, and checksum across all players before a run starts. Exact validation rules stay locked in `docs/mvp-contract.md`.
+Multiplayer sessions should require matching `pack_id`, `version`, and canonical SHA-256 checksum across all players before a run starts. Exact hashing and validation rules stay locked in `docs/mvp-contract.md`.
 
 ## Authoring Principles
 

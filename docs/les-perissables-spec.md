@@ -1,6 +1,6 @@
-# Les Perissables
+# Les Périssables
 
-Les Perissables is a funny, multiplayer, tabletop-style RPG set inside a grocery store. Players pick premade food characters, explore short story-driven scenarios, make terrible decisions, roll dice, and try not to die in aisle-themed combat.
+Les Périssables is a funny, multiplayer, tabletop-style RPG set inside a grocery store. Players pick premade food characters, explore short story-driven scenarios, make terrible decisions, roll dice, and try not to die in aisle-themed combat.
 
 The project works because the joke is loud but the scope is disciplined:
 

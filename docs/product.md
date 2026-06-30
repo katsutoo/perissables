@@ -2,7 +2,7 @@
 
 ## Premise
 
-Les Perissables is a stupid, funny, multiplayer tabletop-style RPG set inside a grocery store. Four players pick premade supermarket characters like a Banana Rogue, Canned Beans Paladin, or Leek Bard, then try to survive short story-driven runs full of bad decisions, dice rolls, and lethal combat.
+Les Périssables is a stupid, funny, multiplayer tabletop-style RPG set inside a grocery store. Two to four players pick premade supermarket characters like a Banana Rogue, Canned Beans Paladin, or Leek Bard, then try to survive short story-driven runs full of bad decisions, dice rolls, and lethal combat.
 
 The joke works because the structure is serious even when the characters are not. The game borrows the clarity of tabletop co-op RPGs, but strips out the slow parts: no leveling, no character builds, no giant inventory screens, and no endless campaign commitment.
 
@@ -78,7 +78,8 @@ The game uses a d100-style system with intentionally unusual critical extremes f
 ## Platform And Release Shape
 
 - Native desktop game, not a browser game.
-- Multiplayer is online through an authoritative server.
+- Multiplayer is online through a hosted authoritative server.
+- Steam lobbies and invites help players find/join sessions, but gameplay authority stays on the server.
 - Steam-first distribution is the expected path.
 
 Pricing, platform-release notes, and other business-facing decisions live in `docs/release-notes.md` so they do not muddy core product and engineering docs.

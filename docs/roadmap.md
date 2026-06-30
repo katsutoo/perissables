@@ -2,13 +2,13 @@
 
 ## Delivery Milestones
 
-These estimates assume one developer, controlled scope, and strict phase discipline.
+These are aggressive planning estimates for one developer with controlled scope and strict phase discipline. Add `30-50%` buffer for calendar planning, especially around Steamworks, native packaging, multiplayer sync, and UGC moderation.
 
-| Milestone | Included phases | Result | Estimated time |
+| Milestone | Included phases | Result | Aggressive estimate |
 | --- | --- | --- | --- |
 | Vertical slice | 00-07 | One map, one story, checks, first combat slice | 3-6 weeks |
 | Playable MVP | 00-13 | Core multiplayer, three themes, stable lobby-to-run loop | 2-4 months |
-| Release-ready | 14-18 | Reconnect robustness, creator tooling, QA, Steam-ready builds | 4-8 months |
+| Release-ready | 14-18 | Reconnect robustness, creator tooling, QA, Steam-ready builds, hosted server | 4-8 months |
 | Community hub | 19-20 | Landing page, then accounts + pack sharing/likes/comments + moderation (separate repo) | 3-8 weeks |
 
 ## How To Use This Roadmap
@@ -116,17 +116,17 @@ Tune the game, profile hot paths, and harden regression coverage.
 
 These phases cover shipping, then the community hub (a committed follow-on built soon after the core game is ready).
 
-### Phase 18 - Steam Packaging
+### Phase 18 - Steam Packaging And Production Server
 
-Prepare reproducible release builds, Steamworks integration, and release operations, with production binaries distributed through Steam rather than public release pages.
+Prepare reproducible release builds, Steamworks integration, production game-server deployment, and release operations, with production binaries distributed through Steam rather than public release pages.
 
 ### Phase 19 - Community Hub Foundation
 
-Create a separate web repo (`les-perissables-hub`), built as a Rust `axum` + `maud` + `htmx` app on Railway with a Railway Postgres database via `sqlx`. Stage 1 is a simple landing page (domain, Steam/wishlist link, community links) that may ship before launch. Stage 2, released soon after the game, adds accounts (Discord/GitHub OAuth), pack sharing for Tier 1 (reuse-only) packs, likes, comments, and sort-by-likes. The hub serves data packs only, never runtime binaries; for upload validation it depends on the MIT pack schema/validation crate from `les-perissables-stories` (not on proprietary game-repo crates). Pack/asset files are stored in Cloudflare R2 (zero-egress) behind a validate-before-publish flow, with Cloudflare providing DNS/CDN in front of the Railway app; the hub itself ships proprietary (ARR), like the game.
+Create a separate web repo (`les-perissables-hub`), built as a Rust `axum` + `maud` + `htmx` app on Railway with a Railway Postgres database via `sqlx`. Stage 1 is a simple landing page (domain, Steam/wishlist link, community links) that may ship before launch. Phase 19 may implement Stage 2 features behind a private/admin gate: accounts (Discord/GitHub OAuth), pack sharing for Tier 1 (reuse-only) packs, likes, comments, and sort-by-likes. The public Stage 2 UGC launch happens only after Phase 20 moderation/privacy gates are complete. The hub serves data packs only, never runtime binaries; for upload validation it depends on the MIT pack schema/validation crate from `les-perissables-stories` (not on proprietary game-repo crates). Pack/asset files are stored in Cloudflare R2 (zero-egress) behind a validate-before-publish flow, with Cloudflare providing DNS/CDN in front of the Railway app; the hub itself ships proprietary (ARR), like the game.
 
 ### Phase 20 - Moderation And Trust
 
-Because the hub hosts user-generated content (shared packs, likes, comments), moderation and privacy ship with the Stage 2 launch, not later: publish a moderation policy and privacy policy, add report/flag plus admin delete/ban actions, anti-spam/upload limits, and account/content deletion. Once asset/format validation is also in place, enable Tier 2 (original-asset) packs.
+Because the hub hosts user-generated content (shared packs, likes, comments), moderation and privacy are the public Stage 2 launch gate, not a later add-on: publish a moderation policy and privacy policy, add report/flag plus admin delete/ban actions, anti-spam/upload limits, and account/content deletion. Once asset/format validation is also in place, enable Tier 2 (original-asset) packs.
 
 ## Definition Of Done For Every Phase
 

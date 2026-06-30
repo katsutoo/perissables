@@ -1,8 +1,8 @@
-# Les Perissables MVP Contract
+# Les Périssables MVP Contract
 
-Status: Locked for pre-repo planning
+Status: Locked for pre-implementation planning
 Owner: Project team
-Updated: 2026-03-23
+Updated: 2026-06-30
 
 This document is the single source of truth for locked MVP scope and implementation decisions.
 
@@ -15,7 +15,8 @@ Ship a funny, fast, multiplayer pixel-art RPG where players pick premade food ch
 1. Native desktop client (Rust + `raylib`/`raylib-rs`) and authoritative Rust server (`axum` + `tokio`).
 2. Story engine driven by JSON (no story-specific hardcoded logic).
 3. d100 dice system with locked rule set:
-   - stat range `5..70`
+   - stat range `5..=70` (inclusive)
+   - internal roll range `0..=100` (inclusive)
    - success when `roll <= stat`
    - critical success on `000` (internal `0`)
    - critical failure on `100`
@@ -60,12 +61,19 @@ Ship a funny, fast, multiplayer pixel-art RPG where players pick premade food ch
 - Production transport: `wss://` (TLS terminated by reverse proxy)
 - Local development transport: `ws://localhost`
 - WebSocket payload for MVP: JSON
+- Production game-server hosting: Railway service running `crates/server`, with separate `staging` and `production` environments
+- MVP server scaling policy: one active game-server instance per environment; do not enable multiple replicas until session state is externalized or sticky session allocation is implemented
+- Game-server config: clients receive the production WebSocket base URL from build/environment config, never from hardcoded gameplay logic
+- Session discovery: Steam lobbies/invites are discovery only; the authoritative server owns `session_id`, player IDs, game state, dice, combat, and story progression
+- Steam lobby mapping: lobby metadata stores the server WebSocket URL, `session_id`, `pack_id`, `version`, checksum, and protocol/schema versions so invitees connect to the same authoritative session
+- Production identity: production `join`/`rejoin` requires Steam auth/session-ticket validation before the server issues or accepts player/session credentials
+- Operations baseline: expose `/healthz` and `/readyz`, use structured logs, and monitor deploy status, error rate, disconnect rate, and reconnect failures through the hosting platform
 - Map format for MVP: TMX
 - Release automation: GoReleaser for build/package generation only; it does not change licensing or grant public binary distribution rights
 - Distribution policy: production desktop binaries ship through Steam depots, not public release pages
 - Release targets: Linux + Windows only
 - macOS policy: deferred (requires Apple Developer Program for signing/notarization workflow)
-- Story schema versioning: `schema_version` integer, start at `1`, reject unsupported major versions
+- Content schema versioning: `schema_version` integer, start at `1`, reject unsupported major versions for story, character, theme, and pack manifests
 - Save schema versioning: `save_version` integer, support current + previous version with explicit migrators
 
 ## Locked Protocol And Limits
@@ -92,6 +100,7 @@ Bootstrap exception: a first `join` is sent before the server has issued IDs. Fo
 Allowed `type` values for v1:
 
 - `join`
+- `join_response`
 - `ready`
 - `input`
 - `state`
@@ -103,9 +112,36 @@ Allowed `type` values for v1:
 - `resync_request`
 - `resync_state`
 
+Message directions for v1:
+
+- Client -> server: `join`, `ready`, `input`, `ping`, `pong`, `rejoin`, `resync_request`
+- Server -> client: `join_response`, `state`, `event`, `error`, `ping`, `pong`, `resync_state`
+
 Sequence rule:
 
-- `seq` is a per-connection monotonic counter and starts at `1`.
+- `seq` is a per-connection, per-direction monotonic counter and starts at `1` for both client->server and server->client traffic.
+
+Join response payload v1:
+
+```json
+{
+  "rejoin_token": "opaque_128_bit_minimum_random_token",
+  "rejoin_expires_at": "2026-06-30T12:00:00Z",
+  "server_time_ms": 0
+}
+```
+
+The `join_response` envelope carries the issued `session_id` and `player_id`. The `rejoin_token` is opaque, server-generated, never stored in Steam lobby metadata, and never logged. It stays valid for the active session plus `10m` after disconnect, is rotated on successful `rejoin`, and is invalidated when the session ends.
+
+Rejoin payload v1:
+
+```json
+{
+  "rejoin_token": "opaque_128_bit_minimum_random_token"
+}
+```
+
+For `rejoin`, `session_id` and `player_id` must be non-empty. If accepted, the server sends `resync_state` before accepting new `input` messages from that connection.
 
 ### Network Limits Defaults
 
@@ -114,6 +150,28 @@ Sequence rule:
 - Input rate limit: `20 msg/s` (burst `40`) per client
 - Control rate limit: `5 msg/s` (burst `10`) per client
 - Heartbeat: every `10s`, disconnect after `30s` timeout
+
+## Locked Pack Compatibility And Checksums
+
+Multiplayer sessions require every player to match all of:
+
+- `pack_id`
+- `version`
+- canonical SHA-256 checksum
+
+Checksum v1 rules:
+
+- The checksum covers the whole pack, not individual files.
+- The pack is treated as a set of relative POSIX paths plus bytes.
+- Reject absolute paths, `..`, symlinks, duplicate paths, and paths outside the pack root.
+- Sort paths lexicographically by UTF-8 bytes before hashing.
+- Hash input starts with `les-perissables-pack-v1\n`.
+- For each sorted file, append `path\0length\0bytes\n`, where `length` is the decimal byte length of the hashed bytes.
+- For `pack_manifest.json`, hash canonical JSON with the top-level `checksum` field omitted; object keys are sorted, UTF-8 is used, and insignificant whitespace is removed.
+- All other files are hashed as raw bytes.
+- The manifest stores the checksum as lowercase hex prefixed with `sha256:`.
+
+The game loader, `storycheck`, and the community hub must all use the same MIT validation crate implementation for this checksum so compatibility checks cannot drift.
 
 ## Locked Content Conventions
 
@@ -173,11 +231,11 @@ Audio channels for v1:
 - Build website as separate repo: `les-perissables-hub`. Keeping it separate preserves the boundary between the ARR game runtime and a public, content-facing site.
 - Roll it out in two stages inside that repo:
   - Stage 1 (may ship before the game launches): a simple landing page that points the domain at the project, links the Steam page/wishlist, and links community channels (e.g. Discord). Content-only: no accounts.
-  - Stage 2 (released soon after the game ships): a community hub where players sign in, share content packs, and discover others' packs.
+  - Stage 2 (implemented soon after the game ships, but not publicly launched until moderation/privacy gates are complete): a community hub where players sign in, share content packs, and discover others' packs.
 - Hub purpose: host/discover community data packs (story/character/theme packs), not runtime binaries. Players still need to own the game on Steam to run any pack.
 - The hub is a user-generated-content (UGC) social platform: signed-in users can share packs, like them, comment on them, and sort/browse by likes.
 - Identity (locked): authentication via Discord and GitHub OAuth only - no homegrown email/password system. Store an opaque provider ID plus display name; the uploading account owns its packs (edit/delete) and is the attribution shown to others.
-- Moderation is a launch requirement, not a later add-on: report/flag flow, admin delete/ban actions, and anti-spam/upload limits ship with the Stage 2 launch.
+- Moderation is a launch requirement, not a later add-on: report/flag flow, admin delete/ban actions, and anti-spam/upload limits ship before the Stage 2 UGC hub is publicly opened.
 - Privacy is a launch requirement: publish a privacy policy and support account/content deletion. See "Privacy And Data Minimization" for how the hub's data handling differs from the game.
 - Locked tech stack: Rust `axum` + `maud` (server-rendered HTML) + `htmx` (interactivity), as one app (a single crate, not a workspace) that starts as the Stage 1 landing page and grows into the Stage 2 hub. For upload validation it depends on the MIT pack schema/validation library crate published from `les-perissables-stories`, so hub-side checks match the game exactly without pulling in proprietary game-repo code.
 - Locked hosting/data: deploy on Railway; database is Railway Postgres accessed via `sqlx` with migrations. If the database is ever outgrown, switch to PlanetScale (Postgres); Neon is explicitly not used. Toasty ORM was evaluated and deferred until it is post-1.0/stable.
@@ -206,8 +264,8 @@ Important runtime rule:
 
 - Community packs are data consumed by the proprietary runtime; they do not grant rights to the engine.
 - Users still need the game install/ownership to run packs.
-- Multiplayer sessions require matching `pack_id`, `version`, and checksum across players.
-- Pack manifest support must include `pack_id`, `version`, and checksum validation in tooling/runtime checks.
+- Multiplayer sessions require matching `pack_id`, `version`, and canonical SHA-256 checksum across players.
+- Pack manifest support must include `pack_id`, `version`, `schema_version`, and checksum validation in tooling/runtime checks using the locked checksum rules above.
 
 Creator content tiers (rollout):
 

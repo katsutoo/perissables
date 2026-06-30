@@ -11,10 +11,10 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 - [x] LOCK-3 HTTP/router stack selected: `axum` + `tower`
 - [x] LOCK-4 Production transport fixed: `wss://` with reverse-proxy TLS termination
 - [x] LOCK-5 WebSocket payload format fixed for MVP: `JSON`
-- [x] LOCK-6 Story/theme schema versioning fixed: `schema_version` integer, start at `1`, reject unsupported major versions
+- [x] LOCK-6 Content schema versioning fixed: `schema_version` integer, start at `1`, reject unsupported major versions for story, character, theme, and pack manifests
 - [x] LOCK-7 Save-file versioning/migration fixed: `save_version` integer, support current + previous version with explicit migrators
 - [x] LOCK-8 Release targets fixed: Linux + Windows only; macOS deferred
-- [x] LOCK-9 WS envelope fixed: `type`, `schema_version`, `session_id`, `player_id`, `seq`, `payload`
+- [x] LOCK-9 WS envelope, message directions, `join_response`, and rejoin-token rules fixed
 - [x] LOCK-10 Network limits fixed: frame caps, per-client rate limits, heartbeat interval/timeout
 - [x] LOCK-11 TMX conventions fixed: layer names plus object naming/property rules
 - [x] LOCK-12 Asset conventions fixed: sprite sheet/frame order/naming plus audio formats
@@ -25,19 +25,22 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 - [x] LOCK-17 Community content/licensing boundary fixed: MIT data packs plus ARR runtime/assets
 - [x] LOCK-18 Save path conventions fixed: Linux `~/.local/share/les-perissables/`, Windows `%AppData%/LesPerissables/`
 - [x] LOCK-19 Privacy baseline fixed: minimum data, no default telemetry, opt-in crash upload if added later
-- [x] LOCK-20 Community website plan fixed: separate repo (`les-perissables-hub`), post-MVP, two stages (landing page first, then community hub soon after game launch); data packs only, no runtime binaries
+- [x] LOCK-20 Community website plan fixed: separate repo (`les-perissables-hub`), post-MVP, two stages (landing page first, then gated community hub); data packs only, no runtime binaries
 - [x] LOCK-21 Creator content tiers fixed: Tier 1 reuse-only at first release, Tier 2 original assets later (gated on hub moderation + asset validation); presentation/narrative are data, rules/spell-behaviors/UI-behavior stay in the engine
 - [x] LOCK-22 Hub stack/hosting/data fixed: Rust `axum` + `maud` + `htmx`, deployed on Railway, Railway Postgres via `sqlx` with migrations; PlanetScale as switch-later option (not Neon); Toasty deferred until post-1.0
 - [x] LOCK-23 Hub identity fixed: accounts via Discord + GitHub OAuth only (no homegrown email/password); store opaque provider ID + display name; uploading account owns/attributes its packs
-- [x] LOCK-24 Hub is a UGC social platform: share packs, like, comment, sort-by-likes; moderation (report/flag, admin delete/ban, anti-spam) and privacy (policy + account/content deletion) ship at Stage 2 launch
+- [x] LOCK-24 Hub is a UGC social platform: share packs, like, comment, sort-by-likes; moderation (report/flag, admin delete/ban, anti-spam) and privacy (policy + account/content deletion) ship before public Stage 2 launch
 - [x] LOCK-25 Hub license fixed: `les-perissables-hub` ships proprietary (ARR) like the game (`COPYRIGHT` + ARR `LICENSE` on repo creation); independent of the MIT data packs it serves and the MIT schema/validation crate it depends on
 - [x] LOCK-26 Hub storage/CDN fixed: pack/asset files in Cloudflare R2 (S3-compatible, zero-egress) with presigned uploads and validate-before-publish (private -> validate -> public); Cloudflare DNS/CDN in front of the Railway app; app + Postgres stay on Railway (not Cloudflare Workers/D1)
+- [x] LOCK-27 Production game-server hosting fixed: Railway service for `crates/server`, `staging`/`production` environments, single active instance per environment until session state is externalized
+- [x] LOCK-28 Steam lobby/session mapping fixed: Steam lobbies/invites provide discovery metadata; the authoritative server owns sessions, player IDs, state, dice, combat, and story progression
+- [x] LOCK-29 Pack checksum rules fixed: canonical SHA-256 over sorted pack contents with manifest `checksum` omitted from its own hash
 
 ## Phase 00 - Foundation And Scope Freeze
 
 - [x] 00.1 Write `docs/mvp-contract.md` with goals, non-goals, and "not in MVP" list
 - [x] 00.2 Freeze core constraints: party size (`4`), tile size (`16x16`), target FPS (`60`), target resolutions (`1280x720`, `1920x1080`)
-- [x] 00.3 Freeze dice/check rules (`d100`, stat range `5-70`, `000` crit success, `100` crit fail)
+- [x] 00.3 Freeze dice/check rules (`d100`, inclusive stat range `5..=70`, inclusive roll range `0..=100`, `000` crit success, `100` crit fail)
 - [x] 00.4 Freeze networking scope for MVP (hosted server, no peer-to-peer)
 - [x] 00.5 Define reusable phase-completion criteria for future phases
 - [x] 00.6 Create `docs/README.md` doc map and doc-boundary guidance
@@ -50,7 +53,7 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 - [ ] 01.3 Add logging bootstrap (`crates/shared/src/logging.rs`) using `tracing` and `tracing-subscriber`
 - [ ] 01.4 Add `mise` tasks in `mise.toml`: `run-client`, `run-server`, `test`, `lint`, `security-scan`
 - [ ] 01.5 Add baseline checks (`cargo fmt --all --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-features`, `cargo audit`)
-- [ ] 01.6 Add legal files (`COPYRIGHT`, ARR `LICENSE`) in main repo scaffold
+- [x] 01.6 Add legal files (`COPYRIGHT`, ARR `LICENSE`) in main repo scaffold
 - [ ] 01.7 Create `les-perissables-stories` repo with MIT `LICENSE` and `README.md` (hosts the schema/validation crate `game_core` depends on from Phase 04)
 - [ ] 01.8 Add starter CI workflow at `.github/workflows/ci.yml` with locked baseline checks
 - [ ] 01.9 Phase 01 complete
@@ -95,9 +98,9 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 
 ## Phase 06 - Dice And Checks
 
-- [ ] 06.1 Implement d100 roll generator with internal roll range `0..100`
+- [ ] 06.1 Implement d100 roll generator with internal roll range `0..=100`
 - [ ] 06.2 Implement resolver ordering: `0` critical success, `100` critical failure, then normal success/fail
-- [ ] 06.3 Implement stat-based checks (`roll <= stat`), stat cap enforcement (`5..70`)
+- [ ] 06.3 Implement stat-based checks (`roll <= stat`), stat cap enforcement (`5..=70`)
 - [ ] 06.4 Add UI formatting: display internal `0` as `000`
 - [ ] 06.5 Add table-driven tests covering boundaries (`0`, `1`, stat, `stat+1`, `100`)
 - [ ] 06.6 Add dice result SFX mapping (`success`, `failure`, `critical_success`, `critical_failure`)
@@ -163,7 +166,7 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 
 ## Phase 13 - Multiplayer Authoritative Server
 
-- [ ] 13.1 Define network protocol messages (`join`, `ready`, `input`, `state`, `event`, `error`)
+- [ ] 13.1 Define network protocol messages (`join`, `join_response`, `ready`, `input`, `state`, `event`, `error`, `ping`, `pong`, `rejoin`, `resync_request`, `resync_state`)
 - [ ] 13.2 Implement server session lifecycle and lobby-to-run transition
 - [ ] 13.3 Move all authority server-side (movement, story state, combat, dice)
 - [ ] 13.4 Implement client intent messages only (never trust client outcomes)
@@ -189,7 +192,7 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 
 - [ ] 15.1 Build the `crates/storycheck` CLI on top of the existing MIT schema/validation crate (from Phase 04) for story/character/theme schema and reference validation
 - [ ] 15.2 Validate cross-file references (story -> character -> theme -> assets)
-- [ ] 15.3 Add pack manifest checks (`pack_id`, `version`, `checksum`)
+- [ ] 15.3 Add pack manifest checks (`pack_id`, `version`, `schema_version`, canonical SHA-256 checksum)
 - [ ] 15.4 Add `--dry-run` graph walk for branching reachability and dead ends
 - [ ] 15.5 Write creator docs with a minimal first-story tutorial plus licensing boundaries
 - [ ] 15.6 Add example packs and a common-error troubleshooting section
@@ -214,16 +217,18 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 - [ ] 17.5 Close blocker/critical bugs and verify no regressions
 - [ ] 17.6 Phase 17 complete
 
-## Phase 18 - Steam Packaging And Release Readiness
+## Phase 18 - Steam Packaging, Production Server, And Release Readiness
 
 - [ ] 18.1 Add GoReleaser config for Rust Linux/Windows release automation
 - [ ] 18.2 Add reproducible Linux/Windows build scripts and version stamping
 - [ ] 18.3 Package runtime assets and verify path handling in release builds
 - [ ] 18.4 Integrate scoped Steamworks features (lobbies/invites/achievements)
 - [ ] 18.5 Bind production multiplayer identity to Steam auth/session tickets
-- [ ] 18.6 Add crash log/reporting path and hotfix playbook
-- [ ] 18.7 Run release-candidate smoke tests on both target OSes
-- [ ] 18.8 Phase 18 complete
+- [ ] 18.6 Deploy staging/production game-server Railway service with WSS URL config, `/healthz`, `/readyz`, structured logs, and single-instance session policy
+- [ ] 18.7 Store game-server session metadata in Steam lobbies/invites (`server_url`, `session_id`, protocol/schema versions, `pack_id`, `version`, checksum)
+- [ ] 18.8 Add crash log/reporting path and hotfix playbook
+- [ ] 18.9 Run release-candidate smoke tests on both target OSes plus hosted-server join/rejoin smoke tests
+- [ ] 18.10 Phase 18 complete
 
 ## Phase 19 - Community Web Hub Foundation (Separate Repo)
 
@@ -235,12 +240,12 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 - [ ] 19.6 Add Railway Postgres + `sqlx` with migrations and backups; define account/pack/like/comment schema
 - [ ] 19.7 Add authentication via Discord + GitHub OAuth (store provider ID + display name)
 - [ ] 19.8 Add Cloudflare R2 storage (S3-compatible) with presigned uploads and a validate-before-publish flow (private bucket -> validate -> public); Tier 1 runs schema validation, with asset/format checks added when Tier 2 lands (Phase 20)
-- [ ] 19.9 Add pack sharing/upload flow owned by the uploading account (Tier 1 reuse-only; no runtime binaries), validated with the MIT pack schema/validation crate
-- [ ] 19.10 Add pack listing pages and metadata model (`pack_id`, `version`, `checksum`, `tags`)
+- [ ] 19.9 Add gated/private pack sharing/upload flow owned by the uploading account (Tier 1 reuse-only; no runtime binaries), validated with the MIT pack schema/validation crate
+- [ ] 19.10 Add pack listing pages and metadata model (`pack_id`, `version`, `schema_version`, `checksum`, `tags`)
 - [ ] 19.11 Add safe pack download flow (served from R2 via CDN)
 - [ ] 19.12 Add likes, comments, and sort/browse-by-likes
 - [ ] 19.13 Add creator-doc links plus validator-integration guidance
-- [ ] 19.14 Phase 19 complete
+- [ ] 19.14 Phase 19 complete; Stage 2 UGC remains private/not publicly launched until Phase 20 is complete
 
 ## Phase 20 - Community Moderation And Trust
 
@@ -250,4 +255,4 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 - [ ] 20.4 Publish privacy policy and support account/content deletion (minimal data handling)
 - [ ] 20.5 Add asset/format validation for uploads (dimensions, frame counts, formats, sizes, checksums)
 - [ ] 20.6 Enable Tier 2 (original-asset) packs once moderation + asset validation are in place
-- [ ] 20.7 Phase 20 complete
+- [ ] 20.7 Phase 20 complete; public Stage 2 UGC launch gate is satisfied

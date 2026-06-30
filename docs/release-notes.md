@@ -6,6 +6,7 @@ Status: exploratory business and release notes, not the source of locked impleme
 
 - Steam-first release.
 - Native Linux and Windows builds first.
+- Production multiplayer uses the hosted authoritative game server defined in `docs/mvp-contract.md`.
 - GoReleaser may be used to build release artifacts, but that does not imply public binary distribution.
 - Paid production binaries should ship through Steam only, not public GitHub/GitLab release pages.
 - No browser version planned.

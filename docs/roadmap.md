@@ -102,11 +102,11 @@ These phases make the project easier to extend, safer to resume, and more stable
 
 ### Phase 15 - Creator Tooling
 
-Build schema validation and pack-check tooling for story creators.
+Build schema validation and pack-check tooling for story creators in the MIT `les-perissables-stories` repo.
 
 ### Phase 16 - Save And Resume
 
-Persist interrupted runs safely with versioned saves and compatibility checks.
+Persist runs server-side with versioned session snapshots and compatibility checks so restarts and deploys do not destroy them.
 
 ### Phase 17 - QA, Balance, Performance
 

@@ -23,7 +23,7 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 - [x] LOCK-15 Audio scope fixed: `ambience`/`music`/`sfx`/`voice` channels plus gameplay audio events
 - [x] LOCK-16 Voice chat policy fixed: no in-game voice chat; external apps only
 - [x] LOCK-17 Community content/licensing boundary fixed: MIT data packs plus ARR runtime/assets
-- [x] LOCK-18 Save path conventions fixed: Linux `~/.local/share/les-perissables/`, Windows `%AppData%/LesPerissables/`
+- [x] LOCK-18 Client save path conventions fixed (non-authoritative local data only): Linux `~/.local/share/les-perissables/`, Windows `%AppData%/LesPerissables/`
 - [x] LOCK-19 Privacy baseline fixed: minimum data, no default telemetry, opt-in crash upload if added later
 - [x] LOCK-20 Community website plan fixed: separate repo (`les-perissables-hub`), post-MVP, two stages (landing page first, then gated community hub); data packs only, no runtime binaries
 - [x] LOCK-21 Creator content tiers fixed: Tier 1 reuse-only at first release, Tier 2 original assets later (gated on hub moderation + asset validation); presentation/narrative are data, rules/spell-behaviors/UI-behavior stay in the engine
@@ -35,6 +35,8 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 - [x] LOCK-27 Production game-server hosting fixed: Railway service for `crates/server`, `staging`/`production` environments, single active instance per environment until session state is externalized
 - [x] LOCK-28 Steam lobby/session mapping fixed: Steam lobbies/invites provide discovery metadata; the authoritative server owns sessions, player IDs, state, dice, combat, and story progression
 - [x] LOCK-29 Pack checksum rules fixed: canonical SHA-256 over sorted pack contents with manifest `checksum` omitted from its own hash
+- [x] LOCK-30 Run-state persistence fixed: server-side session snapshots on a Railway volume; rejoin tokens survive restarts; clients never submit run state; client save paths hold non-authoritative local data only
+- [x] LOCK-31 `storycheck` location fixed: the CLI lives in `les-perissables-stories` (MIT) alongside the schema/validation crate so creators can validate packs without the proprietary repo
 
 ## Phase 00 - Foundation And Scope Freeze
 
@@ -54,7 +56,7 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 - [ ] 01.4 Add `mise` tasks in `mise.toml`: `run-client`, `run-server`, `test`, `lint`, `security-scan`
 - [ ] 01.5 Add baseline checks (`cargo fmt --all --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-features`, `cargo audit`)
 - [x] 01.6 Add legal files (`COPYRIGHT`, ARR `LICENSE`) in main repo scaffold
-- [ ] 01.7 Create `les-perissables-stories` repo with MIT `LICENSE` and `README.md` (hosts the schema/validation crate `game_core` depends on from Phase 04)
+- [ ] 01.7 Create `les-perissables-stories` repo with MIT `LICENSE` and `README.md` (hosts the schema/validation crate `game_core` depends on from Phase 04 and the `storycheck` CLI from Phase 15)
 - [ ] 01.8 Add starter CI workflow at `.github/workflows/ci.yml` with locked baseline checks
 - [ ] 01.9 Phase 01 complete
 
@@ -190,7 +192,7 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 
 ## Phase 15 - Content Tooling For Story Creators
 
-- [ ] 15.1 Build the `crates/storycheck` CLI on top of the existing MIT schema/validation crate (from Phase 04) for story/character/theme schema and reference validation
+- [ ] 15.1 Build the `storycheck` CLI in `les-perissables-stories` on top of the existing MIT schema/validation crate (from Phase 04) for story/character/theme schema and reference validation
 - [ ] 15.2 Validate cross-file references (story -> character -> theme -> assets)
 - [ ] 15.3 Add pack manifest checks (`pack_id`, `version`, `schema_version`, canonical SHA-256 checksum)
 - [ ] 15.4 Add `--dry-run` graph walk for branching reachability and dead ends
@@ -200,13 +202,14 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 
 ## Phase 16 - Save System And Session Persistence
 
-- [ ] 16.1 Define save schema with version field and migration strategy
-- [ ] 16.2 Serialize run state (party, flags, position, current node, encounter)
-- [ ] 16.3 Implement atomic save writes (temp file + fsync + rename)
-- [ ] 16.4 Use locked per-OS save roots (Linux `~/.local/share/les-perissables/`, Windows `%AppData%/LesPerissables/`)
-- [ ] 16.5 Implement load/resume validation (story ID/version compatibility)
-- [ ] 16.6 Add corruption handling (backup slot plus user-facing recovery message)
-- [ ] 16.7 Phase 16 complete
+- [ ] 16.1 Define server-side session snapshot schema with `save_version` field and migration strategy
+- [ ] 16.2 Serialize run state server-side (party, flags, position, current node, encounter, rejoin tokens)
+- [ ] 16.3 Implement atomic snapshot writes (temp file + fsync + rename) to the game server's Railway volume
+- [ ] 16.4 Restore snapshotted sessions on server startup so restarts/deploys do not destroy runs
+- [ ] 16.5 Implement resume validation on rejoin (session/story ID and version compatibility; clients never submit run state)
+- [ ] 16.6 Add corruption handling (backup snapshot slot plus safe session-teardown message to affected players)
+- [ ] 16.7 Keep client-local saves for non-authoritative data only (settings, keybinds) at locked per-OS roots
+- [ ] 16.8 Phase 16 complete
 
 ## Phase 17 - QA, Balance, And Performance
 

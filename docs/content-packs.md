@@ -154,7 +154,7 @@ Planned split:
 
 That boundary matters because the goal is to let creators author new data without granting rights to the game runtime itself.
 
-The reusable pack schema and validation rules live as an MIT library crate in `les-perissables-stories`. Everything that validates packs depends on that one crate: the game's loader, the `storycheck` CLI, and the community hub (`les-perissables-hub`). That keeps validation identical everywhere and lets the separate, non-proprietary hub reuse it without depending on any proprietary game-repo code. The hub itself is a single-crate app, not a multi-crate workspace.
+The reusable pack schema and validation rules live as an MIT library crate in `les-perissables-stories`, alongside the `storycheck` CLI that fronts it, so creators can validate packs without touching the proprietary repo. Everything that validates packs depends on that one crate: the game's loader, `storycheck`, and the community hub (`les-perissables-hub`). That keeps validation identical everywhere and lets the separate, non-proprietary hub reuse it without depending on any proprietary game-repo code. The hub itself is a single-crate app, not a multi-crate workspace.
 
 ## Compatibility Rule
 

@@ -2,7 +2,7 @@
 
 Status: Locked for pre-implementation planning
 Owner: Project team
-Updated: 2026-06-30
+Updated: 2026-07-02
 
 This document is the single source of truth for locked MVP scope and implementation decisions.
 
@@ -48,10 +48,15 @@ Ship a funny, fast, multiplayer pixel-art RPG where players pick premade food ch
 - Tile size: `16x16`
 - Primary resolutions for MVP QA: `1280x720`, `1920x1080`
 
-## Locked Save Paths (v1)
+## Locked Persistence Model (v1)
 
-- Linux: `~/.local/share/les-perissables/`
-- Windows: `%AppData%/LesPerissables/`
+- Run state is server-authoritative and persists server-side: the game server snapshots active sessions to durable storage (Railway volume) so restarts and deploys do not destroy runs.
+- Rejoin tokens and their expiry windows are part of the session snapshot, so a server restart does not invalidate reconnects that would otherwise still be allowed.
+- Clients never submit saved run state; resume always happens through the rejoin flow into a server-restored session.
+- Longer-term resume (the whole party returning after rejoin tokens expire) is post-MVP; if added, re-admittance is by validated Steam identity, never by extending token lifetime.
+- Client save paths hold only non-authoritative local data (settings, keybinds, local preferences):
+  - Linux: `~/.local/share/les-perissables/`
+  - Windows: `%AppData%/LesPerissables/`
 
 ## Locked Architecture Decisions
 
@@ -74,7 +79,7 @@ Ship a funny, fast, multiplayer pixel-art RPG where players pick premade food ch
 - Release targets: Linux + Windows only
 - macOS policy: deferred (requires Apple Developer Program for signing/notarization workflow)
 - Content schema versioning: `schema_version` integer, start at `1`, reject unsupported major versions for story, character, theme, and pack manifests
-- Save schema versioning: `save_version` integer, support current + previous version with explicit migrators
+- Save schema versioning: `save_version` integer for server-side session snapshots and any versioned client-local files, support current + previous version with explicit migrators
 
 ## Locked Protocol And Limits
 
@@ -212,6 +217,7 @@ Audio channels for v1:
 
 - Main repo (`les-perissables`): add `COPYRIGHT`, ARR `LICENSE`, `README.md` on day 1
 - Stories repo (`les-perissables-stories`): add MIT `LICENSE`, `README.md` on day 1
+- The stories repo hosts both the MIT pack schema/validation crate and the `storycheck` CLI, so creators can validate packs without any proprietary game-repo code
 - Minimum CI checks on first commit:
   - `cargo fmt --all --check`
   - `cargo clippy --all-targets --all-features -- -D warnings`

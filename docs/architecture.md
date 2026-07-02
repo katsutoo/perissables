@@ -52,6 +52,7 @@
 - Validate inputs and reject illegal transitions.
 - Broadcast authoritative state snapshots and semantic events.
 - Handle reconnect, resync, and multiplayer session lifecycle.
+- Snapshot active sessions to durable storage so restarts and deploys do not destroy runs.
 
 ## Headless game_core Rule
 
@@ -95,9 +96,6 @@ crates/
       item/
       dice/
       save/
-  storycheck/
-    src/
-      main.rs
   shared/
     src/
       protocol/
@@ -120,7 +118,7 @@ tests/
   testutil/
 ```
 
-The `storycheck` crate here is the CLI front-end. The reusable pack schema and validation rules it enforces live as an MIT library crate in the separate `les-perissables-stories` repo, so the game, `storycheck`, and the community hub all validate packs through the same code without sharing proprietary game-repo crates.
+The `storycheck` CLI and the reusable pack schema/validation rules it enforces both live in the separate MIT `les-perissables-stories` repo; the CLI is a thin front-end over that library crate. Keeping the CLI out of the proprietary repo means creators can install and run the validator without any access to game code, while the game loader and the community hub still validate packs through the same shared crate.
 
 ## Engineering Practices
 
@@ -134,4 +132,4 @@ The `storycheck` crate here is the CLI front-end. The reusable pack schema and v
 
 ## Where Locks Live
 
-This document explains the architecture, but exact locked MVP decisions such as protocol limits, release targets, save-path rules, and schema versioning live only in `docs/mvp-contract.md`.
+This document explains the architecture, but exact locked MVP decisions such as protocol limits, release targets, persistence rules, and schema versioning live only in `docs/mvp-contract.md`.

@@ -75,6 +75,7 @@ The plan is:
 - require a reconnect handshake before accepting new input
 - send a full authoritative resync before returning a player to active play
 - reject out-of-order or replayed input after reconnect
+- persist session snapshots server-side so a server restart or deploy looks like an ordinary disconnect/reconnect to players instead of a destroyed run
 
 ## Audio Rule
 

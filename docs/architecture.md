@@ -118,6 +118,8 @@ tests/
   testutil/
 ```
 
+`mise.toml` is local-development tooling only. CI installs Rust with `rustup`/standard Rust tooling and runs the locked `cargo` checks directly rather than invoking `mise` tasks.
+
 The `storycheck` CLI and the reusable pack schema/validation rules it enforces both live in the separate MIT `les-perissables-stories` repo; the CLI is a thin front-end over that library crate. Keeping the CLI out of the proprietary repo means creators can install and run the validator without any access to game code, while the game loader and the community hub still validate packs through the same shared crate.
 
 ## Engineering Practices

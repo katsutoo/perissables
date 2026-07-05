@@ -218,6 +218,8 @@ Audio channels for v1:
 - Main repo (`les-perissables`): add `COPYRIGHT`, ARR `LICENSE`, `README.md` on day 1
 - Stories repo (`les-perissables-stories`): add MIT `LICENSE`, `README.md` on day 1
 - The stories repo hosts both the MIT pack schema/validation crate and the `storycheck` CLI, so creators can validate packs without any proprietary game-repo code
+- `mise` is for local developer convenience only: `mise.toml` may pin tools and expose tasks, but CI must not depend on `mise`
+- CI installs Rust through `rustup`/standard Rust tooling and runs the locked `cargo` checks directly
 - Minimum CI checks on first commit:
   - `cargo fmt --all --check`
   - `cargo clippy --all-targets --all-features -- -D warnings`

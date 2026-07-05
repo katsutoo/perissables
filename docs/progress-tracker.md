@@ -19,7 +19,7 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 - [x] LOCK-11 TMX conventions fixed: layer names plus object naming/property rules
 - [x] LOCK-12 Asset conventions fixed: sprite sheet/frame order/naming plus audio formats
 - [x] LOCK-13 Repo split/legal baseline fixed: ARR main repo plus MIT stories repo with legal files on day 1
-- [x] LOCK-14 CI baseline fixed: `cargo fmt --all --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-features`, `cargo audit`
+- [x] LOCK-14 CI baseline fixed: CI uses `rustup`/standard Rust tooling, not `mise`; checks are `cargo fmt --all --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-features`, `cargo audit`
 - [x] LOCK-15 Audio scope fixed: `ambience`/`music`/`sfx`/`voice` channels plus gameplay audio events
 - [x] LOCK-16 Voice chat policy fixed: no in-game voice chat; external apps only
 - [x] LOCK-17 Community content/licensing boundary fixed: MIT data packs plus ARR runtime/assets
@@ -53,11 +53,11 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 - [ ] 01.1 Initialize Rust workspace and root folders (`Cargo.toml`, `mise.toml`, `crates/`, `assets/`, `stories/`, `docs/`)
 - [ ] 01.2 Create `crates/client/src/main.rs` and `crates/server/src/main.rs` with startup wiring only
 - [ ] 01.3 Add logging bootstrap (`crates/shared/src/logging.rs`) using `tracing` and `tracing-subscriber`
-- [ ] 01.4 Add `mise` tasks in `mise.toml`: `run-client`, `run-server`, `test`, `lint`, `security-scan`
+- [ ] 01.4 Add local-dev-only `mise` tasks in `mise.toml`: `run-client`, `run-server`, `test`, `lint`, `security-scan`
 - [ ] 01.5 Add baseline checks (`cargo fmt --all --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-features`, `cargo audit`)
 - [x] 01.6 Add legal files (`COPYRIGHT`, ARR `LICENSE`) in main repo scaffold
 - [ ] 01.7 Create `les-perissables-stories` repo with MIT `LICENSE` and `README.md` (hosts the schema/validation crate `game_core` depends on from Phase 04 and the `storycheck` CLI from Phase 15)
-- [ ] 01.8 Add starter CI workflow at `.github/workflows/ci.yml` with locked baseline checks
+- [ ] 01.8 Add starter CI workflow at `.github/workflows/ci.yml` that installs Rust with `rustup` and runs locked baseline checks without depending on `mise`
 - [ ] 01.9 Phase 01 complete
 
 ## Phase 02 - Render Loop And Scene Skeleton

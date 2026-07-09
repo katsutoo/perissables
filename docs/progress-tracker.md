@@ -86,8 +86,9 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 - [ ] 04.2 Implement the schema Rust structs + loader/validation in that MIT crate (strict validation, helpful path-based errors)
 - [ ] 04.3 Have `game_core` depend on the MIT crate for the data model; its `story/` module holds runtime logic, not the schema definition
 - [ ] 04.4 Add table-driven tests for valid/invalid story files
-- [ ] 04.5 Add one canonical example story in `stories/builtin/`
-- [ ] 04.6 Phase 04 complete
+- [ ] 04.5 Add fuzz targets for hostile pack parsing inputs (JSON manifests/stories and TMX/XML), including size/depth/path-boundary cases
+- [ ] 04.6 Add one canonical example story in `stories/builtin/`
+- [ ] 04.7 Phase 04 complete
 
 ## Phase 05 - Story Runtime State Machine
 
@@ -114,15 +115,16 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 - [ ] 07.2 Implement action set (`attack`, `spell`, `item`, `pass`) with costs/effects
 - [ ] 07.3 Implement hit/check resolution using d100 rules
 - [ ] 07.4 Load encounter definitions from story data only (no hardcoded fights)
-- [ ] 07.5 Return structured outcome to story runtime (win/loss/rewards)
-- [ ] 07.6 Add combat music transition hooks (enter/exit combat)
-- [ ] 07.7 Add spell-cast SFX and tiny enemy/character combat voice-bark hooks with cooldown
-- [ ] 07.8 Phase 07 complete
+- [ ] 07.5 Use a hardcoded debug character only for Phases 05-07 so the vertical slice can exercise checks/combat before Phase 08 adds the real roster; remove the debug character path when Phase 08 lands
+- [ ] 07.6 Return structured outcome to story runtime (win/loss/rewards)
+- [ ] 07.7 Add combat music transition hooks (enter/exit combat)
+- [ ] 07.8 Add spell-cast SFX and tiny enemy/character combat voice-bark hooks with cooldown
+- [ ] 07.9 Phase 07 complete
 
 ## Phase 08 - Character Roster And Presets
 
 - [ ] 08.1 Define character preset schema (stats, spells, traits, sprite IDs)
-- [ ] 08.2 Implement character loader and validation (`stat <= 70`)
+- [ ] 08.2 Implement character loader and validation (`5..=70` for every stat)
 - [ ] 08.3 Build character-select UI with lock-in flow
 - [ ] 08.4 Enforce duplicate/invalid pick rules server-side
 - [ ] 08.5 Add sample roster pack (fruit/vegetable/canned/frozen archetypes)
@@ -141,7 +143,7 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 ## Phase 10 - Theme Packs (Supermarket, Garden, Storage Room)
 
 - [ ] 10.1 Add `theme_id` to story metadata schema and validator
-- [ ] 10.2 Define theme manifest format (tiles, props, ambience loop, exploration music, combat music, combat backdrop, default skin)
+- [ ] 10.2 Define theme manifest format (tiles, props, ambience loop, exploration music, combat music, combat backdrop, default skin, `ui_variant`)
 - [ ] 10.3 Implement theme asset loader/unloader with missing-asset fallbacks
 - [ ] 10.4 Create `assets/themes/supermarket`, `assets/themes/garden`, and `assets/themes/storage_room`
 - [ ] 10.5 Verify story switch applies full environment swap for all three themes without logic changes
@@ -150,7 +152,7 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 
 ## Phase 11 - UI Variants Per Story
 
-- [ ] 11.1 Add `ui_variant` support in schema or derive it from theme manifest
+- [ ] 11.1 Add `ui_variant` support from the theme manifest and derive story UI skin from the selected `theme_id`
 - [ ] 11.2 Define skin tokens (frame sprites, button sprites, font refs, color tokens)
 - [ ] 11.3 Refactor UI draw code to read tokens instead of hardcoded values
 - [ ] 11.4 Implement at least two complete skins and fallback behavior
@@ -174,7 +176,7 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 - [ ] 13.4 Implement client intent messages only (never trust client outcomes)
 - [ ] 13.5 Add strict payload validation plus unknown-message rejection
 - [ ] 13.6 Enforce max frame size and per-client/session rate limits
-- [ ] 13.7 Implement session/rejoin token issue/validate/expiry flow
+- [ ] 13.7 Implement session/rejoin token issue/validate/expiry primitives: CSPRNG token issuance, server-side storage, validation, rotation, invalidation, and grace-window accounting. Full reconnect handshake and resync remain Phase 14.
 - [ ] 13.8 Validate `2-4` player synchronization in one local test session
 - [ ] 13.9 Emit semantic audio-cue events only (clients play local audio; no streamed audio payloads)
 - [ ] 13.10 Phase 13 complete
@@ -215,10 +217,11 @@ This tracker is intentionally detailed. Use `docs/mvp-contract.md` for locked MV
 
 - [ ] 17.1 Create playtest checklist for pacing, difficulty, and comedy tone
 - [ ] 17.2 Collect balancing data (success rates per stat/check type)
-- [ ] 17.3 Profile client/server hotspots and reduce avoidable allocations
-- [ ] 17.4 Add regression tests for parser, branching, combat math, and dice edges
-- [ ] 17.5 Close blocker/critical bugs and verify no regressions
-- [ ] 17.6 Phase 17 complete
+- [ ] 17.3 Benchmark production-equivalent client/server builds against locked budgets: 60 FPS render/update behavior, 20 Hz server tick/broadcast, p95/p99 input-to-state-broadcast latency, and 64 concurrent 4-player sessions on the target Railway instance class
+- [ ] 17.4 Profile client/server hotspots and reduce avoidable allocations only after benchmark results identify bottlenecks
+- [ ] 17.5 Add regression tests for parser, branching, combat math, and dice edges
+- [ ] 17.6 Close blocker/critical bugs and verify no regressions
+- [ ] 17.7 Phase 17 complete
 
 ## Phase 18 - Steam Packaging, Production Server, And Release Readiness
 

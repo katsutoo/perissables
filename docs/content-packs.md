@@ -40,10 +40,14 @@ Example event/check node:
   },
   "outcomes": {
     "success": { "goto": "freezer_open" },
-    "failure": { "goto": "alarm_triggers" }
+    "failure": { "goto": "alarm_triggers" },
+    "critical_success": { "goto": "freezer_open_bonus" },
+    "critical_failure": { "goto": "shelf_collapses" }
   }
 }
 ```
+
+Check outcomes always resolve to one of `success`, `failure`, `critical_success`, or `critical_failure`. `success` and `failure` are required. `critical_success` and `critical_failure` are optional; when omitted, they collapse to `success` and `failure` respectively for story branching while retaining critical-specific UI/audio feedback.
 
 Example character preset:
 
@@ -71,11 +75,17 @@ Example theme manifest:
   "schema_version": 1,
   "theme_id": "storage_room",
   "tileset": "tileset_storage_room.png",
-  "ambience": "music_storage_room_hum.ogg",
-  "combat_backdrop": "storage_room_battle.png",
+  "props": "props_storage_room.png",
+  "ambience_loop": "ambience_storage_room_hum.ogg",
+  "exploration_music": "music_storage_room_explore.ogg",
+  "combat_music": "music_storage_room_combat.ogg",
+  "combat_backdrop": "backdrop_storage_room_battle.png",
+  "default_skin": "cold_room",
   "ui_variant": "cold_room"
 }
 ```
+
+The theme manifest is the source of truth for `ui_variant`. Story metadata chooses a `theme_id`; the selected theme then supplies the default UI variant and skin tokens.
 
 Example pack manifest:
 
@@ -101,7 +111,7 @@ Define premade food characters with stats, traits, spell lists, text flavor, and
 
 ### Theme Packs
 
-Define environment-facing presentation: tileset, ambience, combat backdrop, music, and UI skin references.
+Define environment-facing presentation: tileset, props, ambience loop, exploration music, combat music, combat backdrop, default skin, and UI variant references.
 
 ### Pack Manifests
 
@@ -159,6 +169,10 @@ The reusable pack schema and validation rules live as an MIT library crate in `l
 ## Compatibility Rule
 
 Multiplayer sessions should require matching `pack_id`, `version`, and canonical SHA-256 checksum across all players before a run starts. Exact hashing and validation rules stay locked in `docs/mvp-contract.md`.
+
+## Untrusted Input Rule
+
+Community packs are hostile input until validated. Pack loading and `storycheck` must enforce the locked size/path/count limits, reject path traversal and symlinks, parse TMX/XML with external entities and external resources disabled, and keep parser fuzz targets for JSON/TMX boundary cases.
 
 ## Authoring Principles
 

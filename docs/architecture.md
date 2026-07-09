@@ -17,7 +17,7 @@
 | Networking | `axum` WebSockets on `tokio` | Client input transport and authoritative state/event updates |
 | Serialization | `serde` + `serde_json` | Protocol payloads, story parsing, save/load data, tooling I/O |
 | Story content | JSON + validator tooling | Story definitions, branching events, encounters, metadata |
-| Theme system | Asset manifests + per-theme packs | Tilesets, ambience, combat backdrops, UI skin references |
+| Theme system | Asset manifests + per-theme packs | Tilesets, props, ambience, music, combat backdrops, UI skin references |
 | Error handling | `thiserror` + `anyhow` | Domain errors plus startup/tooling context with explicit boundaries |
 | Quality baseline | `cargo fmt --all --check`, `cargo clippy --all-targets --all-features -- -D warnings`, `cargo test --all-features`, `cargo audit` | Reliability and security hygiene (`cargo audit` requires `cargo install cargo-audit` or `cargo binstall cargo-audit`) |
 | Release automation | GoReleaser | Tagged Linux/Windows builds, packaging, checksums |
@@ -101,6 +101,10 @@ crates/
       protocol/
       ids/
       logging.rs
+  integration_tests/
+    tests/
+      protocol.rs
+      story_runtime.rs
 
 assets/
   themes/
@@ -111,14 +115,11 @@ assets/
 stories/
   builtin/
   community/
-
-tests/
-  integration/
-  graphics/
-  testutil/
 ```
 
 `mise.toml` is local-development tooling only. CI installs Rust with `rustup`/standard Rust tooling and runs the locked `cargo` checks directly rather than invoking `mise` tasks.
+
+Workspace-level integration tests live in a dedicated `crates/integration_tests` member so Cargo runs them in CI. Per-crate tests remain in each crate's own `tests/` directory. Graphics behavior that depends on `raylib` or a real display is verified through deterministic renderer/unit seams and manual QA smoke tests unless a headless harness is explicitly added; do not add a root-level `tests/graphics` directory that CI silently ignores.
 
 The `storycheck` CLI and the reusable pack schema/validation rules it enforces both live in the separate MIT `les-perissables-stories` repo; the CLI is a thin front-end over that library crate. Keeping the CLI out of the proprietary repo means creators can install and run the validator without any access to game code, while the game loader and the community hub still validate packs through the same shared crate.
 

@@ -60,6 +60,7 @@ The client owns:
 - Validate every inbound message shape before acting on it.
 - Reject unknown message types and impossible state transitions.
 - Enforce frame size limits and per-client rate limits.
+- Treat control messages (`join`, `ready`, `ping`, `pong`, `rejoin`, `resync_request`) separately from gameplay `input`, and throttle failed `join`/`rejoin` attempts before token validation.
 - Use sequence numbers to drop stale or replayed input.
 - Use heartbeat and timeout rules to detect dead connections.
 - Keep gameplay-critical logic off the client.
@@ -70,7 +71,7 @@ Reconnect matters because short co-op runs feel bad if one temporary disconnect 
 
 The plan is:
 
-- issue session/rejoin credentials during join flow
+- issue CSPRNG-backed session/rejoin credentials during join flow
 - keep reconnect tokens opaque, server-generated, and out of Steam lobby metadata
 - require a reconnect handshake before accepting new input
 - send a full authoritative resync before returning a player to active play

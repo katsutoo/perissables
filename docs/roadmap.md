@@ -7,7 +7,7 @@ These are aggressive planning estimates for one developer with controlled scope 
 | Milestone | Included phases | Result | Aggressive estimate |
 | --- | --- | --- | --- |
 | Vertical slice | 00-07 | One map, one story, checks, first combat slice | 3-6 weeks |
-| Playable MVP | 00-13 | Core multiplayer, three themes, stable lobby-to-run loop | 2-4 months |
+| Playable MVP | 00-13 | Core multiplayer, three themes, stable lobby-to-run loop; reconnect hardening and durable run persistence are not complete yet | 2-4 months |
 | Release-ready | 14-18 | Reconnect robustness, creator tooling, QA, Steam-ready builds, hosted server | 4-8 months |
 | Community hub | 19-20 | Landing page, then accounts + pack sharing/likes/comments + moderation (separate repo) | 3-8 weeks |
 
@@ -38,7 +38,7 @@ Get a stable game window, basic scenes, input abstraction, and audio manager she
 
 ### Core Gameplay Slice (03-09)
 
-These phases build the first full single-run experience in order: move in the world, load stories, resolve checks, fight, select characters, and survive death states.
+These phases build the first full single-run experience in order: move in the world, load stories, resolve checks, fight, select characters, and survive death states. Phases 05-07 may use one hardcoded debug character so the vertical slice can exercise checks and combat before Phase 08 adds the real data-driven roster; that debug path must not survive Phase 08.
 
 ### Phase 03 - Tilemap World Prototype
 
@@ -102,7 +102,7 @@ These phases make the project easier to extend, safer to resume, and more stable
 
 ### Phase 15 - Creator Tooling
 
-Build schema validation and pack-check tooling for story creators in the MIT `les-perissables-stories` repo.
+Build the `storycheck` CLI and cross-file pack checks for story creators in the MIT `les-perissables-stories` repo, on top of the schema/validation crate already built in Phase 04.
 
 ### Phase 16 - Save And Resume
 
@@ -110,7 +110,7 @@ Persist runs server-side with versioned session snapshots and compatibility chec
 
 ### Phase 17 - QA, Balance, Performance
 
-Tune the game, profile hot paths, and harden regression coverage.
+Benchmark against the locked client/server budgets, then profile measured hot paths and harden regression coverage.
 
 ### Release And Community Follow-Through (18-20)
 

@@ -44,11 +44,19 @@ Ship a funny, fast, multiplayer pixel-art RPG where players pick premade food ch
 ## Locked Runtime Constraints
 
 - Max party size: `4`
+- Max active sessions per server instance before admission is refused: `64`
+- Max players per server instance before admission is refused: `256`
 - Target rate: `60 FPS`
+- Client fixed-timestep update rate: `60 Hz`
+- Server simulation tick rate: `20 Hz`
+- Server state broadcast rate: `20 Hz` max; broadcasts may be coalesced, but authoritative ticks must not be skipped silently
+- Hosted-server latency target for Phase 17 benchmarking: p95 input->authoritative-state-broadcast under `100 ms`, p99 under `200 ms`, with `64` active sessions of `4` players on the production-equivalent Railway instance
 - Tile size: `16x16`
 - Primary resolutions for MVP QA: `1280x720`, `1920x1080`
 
-## Locked Persistence Model (v1)
+## Locked Persistence Model (Release-ready v1)
+
+This model is locked now, but implementation lands in Phase 16 and is part of the Release-ready milestone, not the Playable MVP milestone. Before Phase 16, restarts and deploys may destroy active runs and must be treated as known pre-release behavior.
 
 - Run state is server-authoritative and persists server-side: the game server snapshots active sessions to durable storage (Railway volume) so restarts and deploys do not destroy runs.
 - Rejoin tokens and their expiry windows are part of the session snapshot, so a server restart does not invalidate reconnects that would otherwise still be allowed.
@@ -131,12 +139,12 @@ Join response payload v1:
 ```json
 {
   "rejoin_token": "opaque_128_bit_minimum_random_token",
-  "rejoin_expires_at": "2026-06-30T12:00:00Z",
+  "rejoin_grace_seconds": 600,
   "server_time_ms": 0
 }
 ```
 
-The `join_response` envelope carries the issued `session_id` and `player_id`. The `rejoin_token` is opaque, server-generated, never stored in Steam lobby metadata, and never logged. It stays valid for the active session plus `10m` after disconnect, is rotated on successful `rejoin`, and is invalidated when the session ends.
+The `join_response` envelope carries the issued `session_id` and `player_id`. The `rejoin_token` is opaque, server-generated with a CSPRNG at `128` bits of entropy minimum, never stored in Steam lobby metadata, and never logged. It stays valid for the active session plus the `rejoin_grace_seconds` window after disconnect, is rotated on successful `rejoin`, and is invalidated when the session ends.
 
 Rejoin payload v1:
 
@@ -155,6 +163,21 @@ For `rejoin`, `session_id` and `player_id` must be non-empty. If accepted, the s
 - Input rate limit: `20 msg/s` (burst `40`) per client
 - Control rate limit: `5 msg/s` (burst `10`) per client
 - Heartbeat: every `10s`, disconnect after `30s` timeout
+- Control messages are `join`, `ready`, `ping`, `pong`, `rejoin`, and `resync_request`. Gameplay `input` uses the input rate limit; server messages are bounded by frame size and broadcast-rate limits.
+- `join` and `rejoin` additionally require per-IP and per-session throttling before token/session validation so token brute-force attempts are rate-limited even when they fail authentication.
+- `resync_state` must fit in one `64 KiB` outbound frame. If a full session snapshot would exceed that cap, the server rejects the session shape during validation; protocol fragmentation is out of scope for v1.
+- Max serialized session snapshot size: `256 KiB`.
+
+### Content Pack Loading Limits
+
+- Max pack archive size accepted by tooling/runtime: `64 MiB`.
+- Max files per pack: `512`.
+- Max relative path length: `240` bytes UTF-8.
+- Max single JSON file size: `1 MiB`.
+- Max story nodes per story: `512`.
+- Max choices per node: `8`.
+- Max TMX file size: `4 MiB`.
+- TMX/XML parsing must disable external entities and external resource resolution, enforce parser depth/size limits, and treat all community packs as hostile input.
 
 ## Locked Pack Compatibility And Checksums
 
@@ -194,6 +217,9 @@ The game loader, `storycheck`, and the community hub must all use the same MIT v
 - Frames per direction: `4` (`0` idle, `1-3` walk)
 - Character naming pattern: `char_<group>_<name>.png`
 - Theme tileset naming pattern: `tileset_<theme_id>.png`
+- Theme prop atlas naming pattern: `props_<theme_id>.png`
+- Combat backdrop naming pattern: `backdrop_<theme_id>_<name>.png`
+- Ambience loops: `.ogg` (`ambience_<theme_id>_<name>.ogg`)
 - Music: `.ogg` (`music_<theme_id>_<track>.ogg`)
 - SFX: `.wav` (`sfx_<category>_<name>.wav`)
 - Voice bark clips: `.ogg` (`voice_<actor>_<line_id>.ogg`)
@@ -291,6 +317,7 @@ Creator content tiers (rollout):
 - d100 checks working
 - basic combat working
 - no full multiplayer requirement yet
+- may use one hardcoded debug character until the Phase 08 data-driven roster exists
 
 ### MVP Exit
 
@@ -298,6 +325,13 @@ Creator content tiers (rollout):
 - lobby loop is complete
 - three themes selectable through story metadata
 - core run loop stable for repeated sessions
+- durable run persistence is not required until the Release-ready milestone, even though the persistence model is locked above
+
+### Release-ready Exit
+
+- reconnect/resync robustness complete
+- server-side session snapshots survive restarts/deploys
+- production hosted-server smoke tests cover join, rejoin, and restore
 
 ## Change Control
 

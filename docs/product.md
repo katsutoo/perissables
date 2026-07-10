@@ -82,4 +82,4 @@ The game uses a d100-style system with intentionally unusual critical extremes f
 - Steam lobbies and invites help players find/join sessions, but gameplay authority stays on the server.
 - Steam-first distribution is the expected path.
 
-Pricing, platform-release notes, and other business-facing decisions live in `docs/release-notes.md` so they do not muddy core product and engineering docs.
+Business-facing release notes and pricing decisions stay out of these docs; they are tracked separately when needed.

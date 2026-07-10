@@ -9,7 +9,7 @@ That model fits the project well because it keeps co-op sync readable, limits ch
 ## High-Level Flow
 
 1. Player joins or rejoins a session.
-2. Client sends ready/input messages.
+2. Client sends sequenced `input` actions for lobby readiness and gameplay.
 3. Server validates the request against current state.
 4. Server updates the canonical session state.
 5. Server emits snapshots and events to all clients.
@@ -31,11 +31,11 @@ For design purposes, the important rule is:
 - payload varies by message type
 - unknown or stale messages are rejected
 
-For implementation, keep client->server and server->client message directions explicit. `join_response` is the server message that issues `session_id`, `player_id`, and the opaque reconnect credential; `rejoin` must present that credential and receive `resync_state` before new gameplay input is accepted.
+For implementation, keep directions explicit. `join` carries create/join intent, the target session when joining, Steam proof, and the aggregate compatibility tuple. `join_response` issues player/session credentials. `rejoin` presents fresh Steam proof plus the opaque token, then must receive and acknowledge `resync_state` before input is accepted. Exact payloads remain in `docs/mvp-contract.md`.
 
 ## Production Session Discovery
 
-Steam lobbies and invites are discovery UX, not gameplay authority. A lobby points players at the hosted authoritative server session by carrying metadata such as the WebSocket URL, `session_id`, protocol/schema versions, and pack identity/checksum. The server still validates Steam auth/session tickets, issues player credentials, and owns all state transitions.
+Steam lobbies and invites are discovery UX, not endpoint or gameplay authority. Lobby metadata carries the target `session_id`, independent protocol/content/rules versions, and aggregate pack identity/checksum. The WebSocket origin comes only from the trusted environment allowlist, so manipulated lobby metadata cannot redirect Steam proof. The server validates tickets, computes its own compatibility values, issues credentials, and owns all state transitions.
 
 ## Authority Boundaries
 
@@ -60,9 +60,10 @@ The client owns:
 - Validate every inbound message shape before acting on it.
 - Reject unknown message types and impossible state transitions.
 - Enforce frame size limits and per-client rate limits.
-- Treat control messages (`join`, `ready`, `ping`, `pong`, `rejoin`, `resync_request`) separately from gameplay `input`, and throttle failed `join`/`rejoin` attempts before token validation.
-- Use sequence numbers to drop stale or replayed input.
+- Treat control messages separately from gameplay input, enforce pre-auth handshake/global bounds, and throttle failed `join`/`rejoin` attempts before expensive validation.
+- Use per-connection transport sequences for ordering and persisted per-player input sequences for replay protection across reconnects.
 - Use heartbeat and timeout rules to detect dead connections.
+- Bound session mailboxes and writer queues, coalesce replaceable state, and disconnect slow consumers instead of growing memory.
 - Keep gameplay-critical logic off the client.
 
 ## Reconnect And Sync
@@ -74,9 +75,9 @@ The plan is:
 - issue CSPRNG-backed session/rejoin credentials during join flow
 - keep reconnect tokens opaque, server-generated, and out of Steam lobby metadata
 - require a reconnect handshake before accepting new input
-- send a full authoritative resync before returning a player to active play
+- send a bounded player-specific authoritative resync and require acknowledgement before returning a player to active play
 - reject out-of-order or replayed input after reconnect
-- persist session snapshots server-side so a server restart or deploy looks like an ordinary disconnect/reconnect to players instead of a destroyed run
+- after Phase 16, persist session snapshots server-side so a Release-ready restart or deploy looks like an ordinary disconnect/reconnect; before Phase 16, run loss remains explicit pre-release behavior
 
 ## Audio Rule
 

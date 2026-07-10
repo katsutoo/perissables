@@ -16,9 +16,9 @@ The project works because the joke is loud but the scope is disciplined:
 - For technical stack and codebase structure, read `docs/architecture.md`.
 - For multiplayer model and authority boundaries, read `docs/networking.md`.
 - For story/theme/character pack design, read `docs/content-packs.md`.
+- For automated tests, release QA, security boundaries, and performance experiments, read the four dedicated verification plans in `docs/`.
 - For delivery planning and known risks, read `docs/roadmap.md`.
 - For delivery status and phase completion tracking, read `docs/progress-tracker.md`.
-- For release and pricing notes, read `docs/release-notes.md`.
 
 ## Document Boundary
 

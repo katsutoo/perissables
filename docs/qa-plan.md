@@ -2,7 +2,7 @@
 
 Status: Normative release-behavior policy
 Owner: Project team
-Updated: 2026-07-10
+Updated: 2026-07-11
 
 ## Verdicts
 
@@ -14,11 +14,13 @@ Updated: 2026-07-10
 
 Every report has `stage: pre_release` or `stage: final` plus exactly one verdict from the exhaustive list above. Phase 17 requires `stage: pre_release` `PASS` against the production-profile core artifact and scenarios `1..=9` plus `11`; it is not a Release-ready verdict. After Phase 18 creates Steam/package/signing/rollback artifacts, every scenario including `10` is rerun with `stage: final`. Release-ready requires final `PASS`; `PASS WITH KNOWN ISSUES` does not satisfy that gate. Retrying until green, changing the tested artifact/configuration, or hiding an intermittent result is forbidden.
 
+Every report also gives a separate release recommendation: `ship`, `hold`, or `no recommendation`. A final `PASS` is required before QA may recommend `ship`; `FAIL` requires `hold`; `BLOCKED` or `INCONCLUSIVE` requires `no recommendation` unless a documented release criterion independently requires `hold`. The named release owner makes the decision and records any departure from the QA recommendation.
+
 ## Evidence Record
 
 Every run records the Git SHA and dirty state, artifact checksum, build command/profile/features, target environment and URL, non-secret configuration, OS/runtime/GPU/driver, display resolution/scaling, account role, synthetic test data, exact steps, expected result, actual result, logs/network/durable effects, cleanup, and artifact location. Secrets, tickets, tokens, provider subjects, and personal data are redacted.
 
-## MVP Client Matrix
+## Release-ready Client Matrix
 
 | Target | Required environment |
 | --- | --- |
@@ -39,7 +41,7 @@ Record GPU/driver and windowed/fullscreen mode. Keyboard-only operation and two 
 8. Inject persistence unavailability, corrupt current snapshot, unavailable backup, and graceful-shutdown deadline behavior; verify the documented fail-closed result.
 9. In the local single-player creator-test path, install a valid Tier 1 aggregate community pack and reject traversal, alias, oversized, malformed, unsupported-version, checksum-mismatch, and unattested Tier 2 packs without external access or residue. Verify hosted multiplayer remains built-in-only.
 10. Build/package both targets, inspect contents for debug-only characters/keys/features and secrets, launch the shipped binary, and verify Steam depot layout plus rollback artifact.
-11. Restore the current and immediately previous supported save/local-settings versions through the shipped artifact; verify exact migrated state, idempotent re-open, future-version rejection, and rollback behavior without destructive downgrade.
+11. Restore the current save and client-settings versions plus the immediately previous positive version of each when one exists through the tested artifact; verify exact migrated state, idempotent re-open, malformed/oversized/future/too-old rejection, documented default recovery, and rollback behavior without destructive downgrade. Version `1` records previous-version coverage as not applicable rather than fabricating a version `0` fixture.
 
 ## Operations Oracles
 
@@ -54,3 +56,4 @@ Record GPU/driver and windowed/fullscreen mode. Keyboard-only operation and two 
 - `Critical`: major supported flow unavailable, cross-player authority failure, repeatable crash, or severe persistence/reconnect failure.
 - `Major` and `Minor`: degraded behavior with a safe workaround or limited presentation impact.
 - Use synthetic accounts/data, avoid production and real third-party effects, restore local/staging state, and report anything that could not be cleaned up.
+- Reports list every scenario as passed, failed, blocked, inconclusive, or not applicable; they identify the tested build/environment/account roles, release recommendation, decision owner, cleanup result, and untested residual risk.

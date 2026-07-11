@@ -34,11 +34,12 @@ This checklist records status only. Exact values and behavior live in `docs/mvp-
 - [ ] 01.2 Create startup-only entrypoints for client/server plus minimal `game_core`, `shared`, and `integration_tests` crates with the locked dependency direction
 - [ ] 01.3 Add logging bootstrap (`crates/shared/src/logging.rs`) using `tracing` and `tracing-subscriber`
 - [ ] 01.4 Add local-dev-only `mise` tasks in `mise.toml`: `run-client`, `run-server`, `test`, `lint`, `security-scan`
-- [ ] 01.5 Add the exact `--locked` baseline checks and pin the `cargo-audit` tool version
+- [ ] 01.5 Add the exact `--locked` baseline checks, doctest/rustdoc checks, and pinned `cargo-audit`/`cargo-deny` tools and policy
 - [x] 01.6 Add legal files and close outside pull requests pending a reviewed policy with written contributor agreement
-- [ ] 01.7 Create `les-perissables-stories` repo with MIT `LICENSE` and `README.md` (hosts the schema/validation crate `game_core` depends on from Phase 04 and the `storycheck` CLI from Phase 15)
+- [ ] 01.7 Create `les-perissables-stories` repo with MIT `LICENSE` and `README.md`; record its repository URL, initial commit SHA, release/tag policy, crate name, and main-repo pinning procedure in Phase 01 evidence (it hosts the schema/validation crate `game_core` depends on from Phase 04 and the `storycheck` CLI from Phase 15)
 - [ ] 01.8 Add starter CI that installs the pinned toolchain with `rustup`, runs locked baseline checks without `mise`, and compiles supported Linux/Windows targets
-- [ ] 01.9 Phase 01 complete
+- [ ] 01.9 Pin and document native `raylib` and Steamworks crate/SDK acquisition, checksums, linkage, target prerequisites, and licenses as required by the contract
+- [ ] 01.10 Phase 01 complete
 
 ## Phase 02 - Render Loop And Scene Skeleton
 
@@ -168,9 +169,10 @@ This checklist records status only. Exact values and behavior live in `docs/mvp-
 - [ ] 13.5 Add strict payload validation plus unknown-message rejection
 - [ ] 13.6 Enforce locked message, handshake, connection, mailbox, writer-queue, rate, timeout, and slow-client limits
 - [ ] 13.7 Implement CSPRNG rejoin tokens with keyed digest storage, identity/session/player/generation binding, rotation, invalidation, and grace accounting
-- [ ] 13.8 Run deterministic scripted `2`, `3`, and `4` client convergence scenarios plus all locked admission boundaries
-- [ ] 13.9 Emit semantic audio-cue events only (clients play local audio; no streamed audio payloads)
-- [ ] 13.10 Phase 13 complete
+- [ ] 13.8 Integrate Steam session-ticket validation for isolated staging, including expected-app/ownership checks, bounded provider concurrency/timeouts, redacted failures, and authorized publisher test accounts; no authentication bypass is permitted
+- [ ] 13.9 Run deterministic scripted `2`, `3`, and `4` client convergence scenarios plus all locked admission boundaries
+- [ ] 13.10 Emit semantic audio-cue events only (clients play local audio; no streamed audio payloads)
+- [ ] 13.11 Phase 13 complete
 
 ## Phase 14 - Sync Robustness And Reconnect
 
@@ -203,7 +205,7 @@ This checklist records status only. Exact values and behavior live in `docs/mvp-
 - [ ] 16.4 Restore snapshotted sessions on server startup so restarts/deploys do not destroy runs
 - [ ] 16.5 Implement resume validation using selected story ID plus aggregate pack ID/version/checksum, content schema version, game-rules version, and save version; clients never submit run state
 - [ ] 16.6 Add corruption handling (backup snapshot slot plus safe session-teardown message to affected players)
-- [ ] 16.7 Add current/previous/future/corrupt/oversized fixtures and fault injection at every persistence checkpoint
+- [ ] 16.7 Add current, immediately previous positive when one exists, future, corrupt, and oversized fixtures plus fault injection at every persistence checkpoint; version `1` records previous-version coverage as not applicable
 - [ ] 16.8 Keep client-local saves for non-authoritative data only at locked per-OS roots
 - [ ] 16.9 Run deterministic release-mode local `restore-v1` and `compaction-v1` qualification at maximum fixture state, including every rename/fsync interruption; Phase 17 reruns hosted capacity measurements
 - [ ] 16.10 Phase 16 complete
@@ -223,8 +225,8 @@ This checklist records status only. Exact values and behavior live in `docs/mvp-
 - [ ] 18.1 Add GoReleaser config for Rust Linux/Windows release automation
 - [ ] 18.2 Add reproducible Linux/Windows build scripts and version stamping; perform two clean builds per target and compare normalized artifacts byte-for-byte with retained commands/image digests/checksums
 - [ ] 18.3 Package runtime assets and verify path handling in release builds
-- [ ] 18.4 Integrate scoped Steamworks features (ownership/authentication, lobbies, and invites); achievements remain post-MVP
-- [ ] 18.5 Bind production multiplayer identity to Steam auth/session tickets
+- [ ] 18.4 Finalize scoped Steamworks lobbies, invites, ownership UX, and depot integration on top of the Phase 13 ticket-validation boundary; achievements remain post-MVP
+- [ ] 18.5 Promote the already-tested Steam identity binding to production configuration and reverify expected-app/ownership enforcement without changing its protocol contract
 - [ ] 18.6 Promote the benchmarked staging shape to production with trusted WSS allowlist, health/readiness semantics, lease enforcement, structured logs, and graceful drain
 - [ ] 18.7 Store session metadata without an endpoint: `session_id`, protocol/content/rules versions, aggregate pack ID/version/checksum
 - [ ] 18.8 Add bounded local redacted crash-log rotation and hotfix playbook; any upload is separately informed, opt-in, redacted, and subject to the contract retention table

@@ -90,9 +90,9 @@ Complete the repeatable lobby -> run -> summary -> lobby loop.
 
 These phases move authority fully server-side, then harden sync and reconnect behavior.
 
-### Phase 13 - Authoritative Multiplayer
+### Phase 13 - Authoritative Multiplayer And Staging Identity
 
-Move gameplay authority server-side using the already deterministic `game_core`; validate scripted 2-4 player convergence and all admission boundaries.
+Move gameplay authority server-side using the already deterministic `game_core`; integrate Steam ticket validation for isolated staging, then validate scripted 2-4 player convergence and all admission boundaries. Depot packaging and final lobby/invite UX remain in Phase 18, but Phase 17 must not depend on an authentication path that does not exist yet.
 
 ### Phase 14 - Reconnect And Sync Robustness
 
@@ -120,7 +120,7 @@ These phases cover shipping, then the community hub (a committed follow-on built
 
 ### Phase 18 - Steam Packaging And Production Server
 
-Prepare and sign reproducible release builds, integrate the locked Steamworks scope, deploy the production game server, and rerun the complete QA/release matrix against the final candidate. Production binaries are distributed through Steam rather than public release pages.
+Prepare and sign reproducible release builds, finalize Steam lobbies/invites and depot integration on top of the Phase 13 identity boundary, deploy the production game server, and rerun the complete QA/release matrix against the final candidate. Production binaries are distributed through Steam rather than public release pages.
 
 ### Phase 19 - Community Hub Foundation
 

@@ -2,7 +2,7 @@
 
 Status: Normative performance experiment
 Owner: Project team
-Updated: 2026-07-10
+Updated: 2026-07-11
 
 ## Decisions And Gates
 
@@ -17,13 +17,13 @@ Benchmarks validate production-profile artifacts after correctness tests pass an
 
 ## Server Workload
 
-- Artifact: deployed `les-perissables-server` release build with one active instance and fixture `benchmark-fixture-v1`. Its archive, canonical checksum, schema/rules versions, initial snapshots, action traces, and expected counters live under `benchmarks/fixtures/v1/` and are frozen before Phase 13 exits; changing any file creates `v2`, never silently updates v1.
-- Fixture shape: one `512x512` CSV TMX map, `512` story nodes, `128` encounters, `64` characters, `256` flags, and maximum-size client projections that remain within the contract caps. The fixture manifest records exact archive/file/expanded bytes and expected validation result. It uses synthetic text/media and no proprietary production account data.
+- Artifact: deployed `les-perissables-server` release build with one active instance and fixture `benchmark-fixture-v1`. Its archive, canonical checksum, schema/rules versions, initial snapshots, action traces, expected counters, and expected payload-size distribution live under `benchmarks/fixtures/v1/` and are frozen before Phase 13 exits; changing any file creates `v2`, never silently updates v1.
+- Fixture shape: one `512x512` CSV TMX map, `512` story nodes, `128` encounters, `64` characters, and `256` flags exercise maximum content-state bounds without making every client projection a maximum-size payload. The steady-state trace freezes encoded state payloads in the `2..=8 KiB` range with p50 at or below `4 KiB`, encoded event payloads in the `0.5..=4 KiB` range when present, and no resync payload during the normal measured interval. Its precomputed expected aggregate ingress plus egress at `100%` offered rate must be at or below `40 MiB/s`, leaving at least `10 MiB/s` beneath the gate for measured protocol/transport overhead; a fixture that cannot prove that budget is invalid before load testing. The fixture manifest records exact archive/file/expanded bytes, per-message expected encoded sizes, expected traffic by message class, and expected validation result. It uses synthetic text/media and no proprietary production account data. Boundary-size frames are measured separately by `max-payload-v1`.
 - Load model: open-loop, `64` sessions with `4` authenticated clients each (`256` clients), `20` scheduled inputs per client per second (`5,120 msg/s` offered).
 - Session distribution is fixed at `32` world, `16` story-vote, and `16` combat sessions. Trace seed is `0x4c505f42454e4348`. World clients send valid held-direction replacements; story clients alternate valid choices on the current open vote; in combat, only the actor current at batch start sends the fixture's first legal action while the other three send `combat_attack` with the reserved syntactically valid but nonexistent fixture ID `ent_invalid_benchmark_target`, guaranteeing `target_unavailable` even if the turn advances during sequential staging. Over a complete `10-minute` measured run the target is `3,072,000` scheduled inputs: `1,536,000` valid world, `768,000` valid story, `192,000` valid combat, and `576,000` expected target rejections. Fixture resets and actor rotation are part of the checked trace, not benchmark setup hidden from counters. Late/dropped starts, unexpected rejection, and deviation from these counts are failures, not discarded samples.
 - Run shape: `2 minutes` warmup, `10 minutes` measured steady state, `5` independent process/deployment runs. Randomize candidate/baseline order for later comparisons.
 - Processing latency starts after a complete expected-sequence input passes protocol, authentication, rate, and sequence validation; it ends when that input's `input_result` is handed to the connection's WebSocket writer after any required WAL commit. Correlate by `input_seq`; applied/rejected/superseded outcomes are reported separately.
-- Also record scheduled client-send to matching client-receive latency from the same-region load generator. This includes network and queueing but has no fixed MVP gate.
+- Also record scheduled client-send to matching client-receive latency from the same-region load generator. This includes network and queueing but has no fixed Release-ready gate.
 - Authentication happens before warmup using `256` project-controlled Steam publisher test accounts explicitly authorized for staging. Tickets are validated normally and are never recorded. If the approved account pool or Steam test authorization is unavailable, the hosted benchmark is `BLOCKED`; do not add an auth bypass, reuse one identity across seats, or load-test Steam itself.
 
 ## Recovery And Bound Workloads
@@ -32,7 +32,7 @@ Benchmarks validate production-profile artifacts after correctness tests pass an
 - `reconnect-v1`: after steady state, disconnect all `256` clients and reconnect their reserved seats uniformly over `30s`. Gate: no new capacity consumption, all resync acknowledgements complete within `10s` of each connection, zero duplicate semantic events, and zero unexpected errors.
 - `slow-writer-v1`: one synthetic client per session stops reading for `5s` while others continue. Gate: only those `64` clients are disconnected through the documented bounded queue path; owner mailboxes remain below `50%` p99 and healthy clients remain connected.
 - `compaction-v1`: begin at `48 MiB` WAL with all sessions dirty, run one compaction while processing `50%` offered rate, and inject a restart at each rename/fsync checkpoint in separate runs. The trace is precomputed to append at most `8 MiB` before durable replacement, leaving `8 MiB` below the hard cap. Gate: exact restore, no acknowledged loss, WAL at or below `16 MiB` afterward, no cap-blocked input, and processing latency remains within the normal gate.
-- `max-payload-v1`: emit the largest valid resync, state, and `64`-item event batch to every client at `25%` offered rate. Gate: every frame remains within its cap, zero queue overflow, and total ingress plus egress remains at or below `50 MiB/s`.
+- `max-payload-v1`: with gameplay input paused, test one largest-valid frame type at a time: resync, state, then a `64`-item event batch. For each type, cover all clients in four deterministic waves of `64` and start the next wave only after every prior writer queue drains; record bytes plus drain time for each wave. Gate: every frame remains within its individual cap, only the intended bundle is queued, zero queue overflow/disconnect occurs, queues return to zero within `5s` per wave, and the driver records actual peak and average throughput. The steady-state `50 MiB/s` budget does not apply to an instantaneous diagnostic burst; this workload cannot establish sustained capacity.
 
 ## Client Workload
 
@@ -58,6 +58,16 @@ Before the first gated run, convert the frozen Railway limits into numeric repor
 
 Run the workload at `25%`, `50%`, `75%`, and `100%` of offered rate with the same seeded state machine. The gated `100%` point must remain below saturation by the headroom rules; do not increase load until failure or affect production/third-party availability.
 
+## Harness And Raw Result Contract
+
+- The repository-owned benchmark driver is a non-shipping binary target in `les-perissables-integration-tests`, built with the pinned toolchain and the release profile. It uses the shared protocol DTOs, the frozen trace, an open-loop monotonic scheduler, and a bounded connection/task pool; it does not duplicate protocol serialization or game rules.
+- Every scheduled operation records `scheduled_send_ns`, `actual_send_ns`, `receive_ns`, session/player/input sequence, expected outcome, actual outcome, encoded request/response bytes, timeout status, and run ID. Scheduled-send latency is the end-to-end open-loop measurement; actual-send latency is retained only to diagnose driver delay. Server processing latency comes from the server's correlated monotonic instrumentation and is never reconstructed from client clocks.
+- Histograms use one pinned HDR-compatible implementation with `1 us` lowest discernible value, `60 s` highest trackable value, and three significant digits. Values beyond the range and timed-out operations are counted explicitly and fail the run; they are never clamped or omitted. Compatible raw histograms may be merged, but run-level percentiles are never averaged.
+- The driver writes newline-delimited JSON operation records, one JSON run manifest, and lossless histogram files. The manifest includes schema version, Git SHA/dirty state, artifact digest, exact commands, tool versions, fixture version/checksum, seed, run order, monotonic clock source, start/end wall time, offered/achieved rate, warmup/measurement durations, client/session counts, timeout policy, histogram configuration, expected/actual counters, error totals, and host/environment capture.
+- Warmup records are tagged and excluded by the fixed time boundary rather than deleted. Setup, authentication, and fixture reset happen outside the measured interval. The driver verifies expected state/counters before and after timing and exits non-zero on correctness, count, late-start, timeout, or serialization mismatch.
+- Each independent run uses a fresh server process or deployment and a fresh driver process. Later baseline/candidate comparisons generate a seeded randomized or interleaved order before execution and retain that order; rerunning only an unfavorable side is forbidden.
+- Before accepting the harness, run a loopback calibration with a no-op protocol fixture to establish scheduler delay, timestamp overhead, maximum sustainable generator rate, CPU use, socket/file-descriptor headroom, and the measurement noise floor. A gated run is invalid if the driver exceeds `70%` CPU allocation, misses more than `0.1%` of scheduled starts, or cannot sustain at least `125%` of the target offered rate in calibration.
+
 ## Pass And Interpretation
 
 - Server processing latency passes only when every independent run satisfies p95 `<100 ms` and p99 `<200 ms`, all resource/headroom gates above, zero unexpected errors/disconnects, and no unreported missed tick.
@@ -67,4 +77,4 @@ Run the workload at `25%`, `50%`, `75%`, and `100%` of offered rate with the sam
 
 ## Artifacts
 
-Store exact build and benchmark commands, redacted configuration, environment capture, workload seed, raw samples/histograms, logs, and a Markdown summary under `artifacts/benchmarks/<git-sha>/<run-id>/`. Keep artifacts out of source control unless intentionally added as a small versioned baseline. Profiling output explains a measured result and never substitutes for an unprofiled benchmark.
+Store exact build and benchmark commands, redacted configuration, environment capture, workload seed, raw NDJSON samples/histograms, run manifest, logs, and a Markdown summary under `artifacts/benchmarks/<git-sha>/<run-id>/`. Keep raw run artifacts out of source control and retain them according to the contract; versioned synthetic fixtures, workload definitions, expected counters, and redacted summaries remain reproducible source/release-history artifacts. Profiling output explains a measured result and never substitutes for an unprofiled benchmark.

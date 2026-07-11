@@ -2,7 +2,7 @@
 
 Status: Normative review and verification scope
 Owner: Project team
-Updated: 2026-07-10
+Updated: 2026-07-11
 
 ## Objectives And Assets
 
@@ -16,6 +16,23 @@ Protect authoritative run integrity, player/session identity, Steam proofs, rejo
 - A compromised client cannot be trusted with authoritative outcomes or hidden state.
 - Railway volumes/backups, CI logs/artifacts, R2 objects, OAuth callbacks, dependencies, and administrator sessions are distinct trust boundaries.
 - Production, Steam, Railway, OAuth providers, and third-party services are not active-test targets without explicit written authorization for the exact environment and actions.
+
+## Threat Register
+
+This register is the minimum tracked set. Each implementation phase links its applicable tests or review evidence and records any changed residual risk; an unresolved High-priority threat blocks the phase that exposes it.
+
+| Threat | Primary control | Owner | Verification criterion | Priority | Residual risk |
+| --- | --- | --- | --- | --- | --- |
+| Session or player takeover through forged/replayed credentials | Steam proof validation, identity/session/player/token-generation binding, keyed token digests, rotation, absolute expiry, one active connection | Server identity owner | Negative join/rejoin/takeover tests prove wrong identity, token, generation, app, and expiry cannot gain authority and leak no secret | High | Compromised Steam account or player device remains authoritative until provider/session revocation |
+| Cross-player, hidden-state, or client-authority violation | Server-owned state machine, deny-by-default action ownership, per-player projection | Game-core and protocol owners | Transcript and 2/3/4-client tests prove unauthorized actions do not mutate state and projections contain no hidden fields | High | Bugs in a newly added projection/action require renewed review and tests |
+| Malicious pack traversal, parser exploit, decompression/resource exhaustion, or external fetch | Portable archive subset, strict bounds, sandboxed no-network workers, direct validated-member access | Pack-validation owner | Conformance/fuzz corpus covers every parser and limit; no panic, escape, fetch, residue, or acceptance beyond bounds | High | Native decoder vulnerabilities remain possible inside the bounded sandbox |
+| Persistence corruption, rollback, split ownership, or acknowledged-state loss | Exclusive lease/fencing, staged WAL commit-before-publish, checksums, immutable generations, bounded recovery | Persistence owner | Fault injection at every append/fsync/rename/compaction point restores exactly or fails closed without acknowledged loss | High | Volume/provider failure can terminate a session while preserving only the last durable generation |
+| CPU, memory, socket, queue, disk, retry, or provider exhaustion | Contract-wide admission and resource bounds, backpressure, rate limits, circuit breakers, slow-consumer disconnect | Server operations owner | Boundary tests plus authorized benchmark workloads demonstrate refusal before oversubscription and stable healthy-client service | High | A single instance has finite capacity and may refuse new sessions under legitimate spikes |
+| Native FFI, dependency, or build-supply-chain compromise | Pinned toolchain/SDK/source checksums, minimal adapters, unsafe contracts, protected release jobs, advisory/license/source policy | Release owner | Clean reproducible builds, dependency review, wrapper tests/sanitizers where supported, signature/provenance verification | High | Upstream compromise may evade known-advisory and reproducibility controls |
+| Hub account/object authorization bypass or confused deputy | Provider-scoped identity, CSRF/session controls, server-side ownership checks, private immutable validation state | Hub identity/storage owner | Two-account and moderator-role tests cover read/edit/delete/publish/link paths and object state transitions | High at Phase 19 | OAuth/provider compromise and moderator abuse require revocation/audit response |
+| UGC abuse, illegal content, privacy failure, or deletion failure | Private-by-default launch gate, moderation/reporting, quotas, rights terms, minimized retention, reference-counted deletion | Hub policy/moderation owner | Pre-public-launch policy review and QA prove reporting, takedown, ban, account/content deletion, backup-expiry disclosure, and audit access | High at Phase 20 | Provider backups expire asynchronously and cannot promise immediate physical erasure |
+
+Owners are roles until named individuals are assigned in the phase evidence. Accepted residual risk requires an owner, rationale, target review date, and release-owner approval; it is not implied by passing tests.
 
 ## Required Controls
 

@@ -156,7 +156,7 @@ Creators may additionally ship their own presentation so a pack fully matches it
 - Original tilesets, maps, character sprites, music, ambience, SFX, and combat backdrops.
 - Original UI/theme manifests (visual skin variants).
 
-All original assets must conform to the locked conventions in `docs/mvp-contract.md` (16x16 tiles, sprite frame order/naming, TMX layer/object rules, audio formats and sample rate). Tier 2 is enabled only after the community hub has submission rules, asset/format validation, and moderation/abuse controls, because arbitrary uploaded art and audio raise moderation, licensing/IP, distribution, and untrusted-file-handling concerns.
+All original assets must conform to the locked conventions in `docs/mvp-contract.md` (16x16 tiles, sprite frame order/naming, TMX layer/object rules, Ogg Vorbis/PCM WAV decoder formats, channel/sample-format limits, and sample rate). Tier 2 is enabled only after the community hub has submission rules, asset/format validation, and moderation/abuse controls, because arbitrary uploaded art and audio raise moderation, licensing/IP, distribution, and untrusted-file-handling concerns.
 
 The schema supports custom asset references from the start. Release builds load them only with the signed, unexpired, non-revoked hub publication attestation defined in `docs/mvp-contract.md`; ordinary side-loading cannot bypass the Tier 2 gate.
 

@@ -2,7 +2,7 @@
 
 Status: Normative verification policy
 Owner: Project team
-Updated: 2026-07-10
+Updated: 2026-07-11
 
 ## Purpose
 
@@ -28,7 +28,7 @@ Tests protect observable behavior and locked invariants. They do not replace QA,
 | State-machine transcript | Authoritative transitions | Story branches, combat actions, death/wipe, reset, stable revisions/events |
 | Protocol contract | Wire compatibility and rejection | Every payload/direction, versions, sequence boundaries, close/error behavior |
 | Multi-client integration | Convergence and authority | Scripted 2/3/4 clients, simultaneous joins, stale/replayed input, reconnect |
-| Persistence integration | Crash-safe continuation | Current/previous migration, corrupt/future/oversized state, every write fault point |
+| Persistence integration | Crash-safe continuation | Current and immediately previous positive migration when that previous version exists, corrupt/future/oversized state, every write fault point |
 | Release-artifact smoke | Shipped behavior | Startup, full run, hosted join/rejoin/restore on Linux and Windows |
 
 ## Mandatory Boundaries

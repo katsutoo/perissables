@@ -2,9 +2,11 @@
 
 Status: Locked for Phase 01 implementation; later phase changes follow the tracker and definition of done
 Owner: Project team
-Updated: 2026-07-10
+Updated: 2026-07-11
 
 This document is the single source of truth for locked MVP scope and implementation decisions.
+
+Milestone terms are exact throughout the documentation: `Playable MVP` means Phases 00-13, `Release-ready` means Phases 00-18, and `Post-MVP` means work outside the Release-ready gate. Unqualified `MVP` refers to the product scope shared by those milestones, not to a delivery gate.
 
 ## Product Objective
 
@@ -116,7 +118,8 @@ This model is locked now, but implementation lands in Phase 16 and is part of th
 - macOS policy: deferred (requires Apple Developer Program for signing/notarization workflow)
 - Protocol versioning: `protocol_version` integer, start at `1`; every increment is breaking unless a future compatibility document says otherwise.
 - Content schema versioning: `content_schema_version` integer, start at `1`; every increment is breaking. Reject unsupported values for story, character, theme, and pack manifests.
-- Save schema versioning: `save_version` integer for server-side session snapshots and any versioned client-local files, support current + previous version with explicit migrators
+- Save schema versioning: `save_version` integer for server-side session snapshots, support the current version and the immediately previous positive version once one exists, with explicit migrators
+- Client-settings versioning: `client_settings_version` integer starts at `1`; support the current version and the immediately previous positive version once one exists, with explicit pure migrators
 - Game-rule versioning: `game_rules_version` integer, start at `1`; it changes when authoritative mechanics or built-in effect semantics become network-incompatible.
 
 ## Locked Protocol And Limits
@@ -493,11 +496,11 @@ Schema validation occurs in this order: archive/path/resource bounds, JSON synta
 - Theme tileset naming pattern: `tileset_<theme_id>.png`
 - Theme prop atlas naming pattern: `props_<theme_id>.png`
 - Combat backdrop naming pattern: `backdrop_<theme_id>_<name>.png`
-- Ambience loops: `.ogg` (`ambience_<theme_id>_<name>.ogg`)
-- Music: `.ogg` (`music_<theme_id>_<track>.ogg`)
-- SFX: `.wav` (`sfx_<category>_<name>.wav`)
-- Voice bark clips: `.ogg` (`voice_<actor>_<line_id>.ogg`)
-- Target sample rate: `48 kHz`
+- Ambience loops: Ogg container with Vorbis audio, `.ogg` (`ambience_<theme_id>_<name>.ogg`)
+- Music: Ogg container with Vorbis audio, `.ogg` (`music_<theme_id>_<track>.ogg`)
+- Voice bark clips: Ogg container with Vorbis audio, `.ogg` (`voice_<actor>_<line_id>.ogg`)
+- SFX: uncompressed little-endian PCM WAV, `.wav`, with `16`-bit signed samples (`sfx_<category>_<name>.wav`)
+- Accepted audio is mono or stereo at `48 kHz`; validators reject other codecs, sample formats, channel counts, or rates rather than relying on platform decoder behavior
 
 ### Gameplay Bounds v1
 
@@ -509,7 +512,7 @@ Schema validation occurs in this order: archive/path/resource bounds, JSON synta
 - Encounters contain at most `16` enemies and `20` total actors. Combat is capped at `256` rounds and `5,120` actor turns; reaching either cap ends the encounter as a failed run with a stable limit event.
 - Arithmetic uses checked operations in a wider intermediate type, then clamps HP/resources to their validated maxima. Overflow, underflow, or an out-of-range authored value is a validation/programmer error, never wrapping behavior.
 - Combat turn order is descending agility. Ties are resolved by stable lexical actor ID. Each actor performs exactly one of `attack`, `spell`, `item`, or `pass` per turn.
-- Invalid, unaffordable, dead-actor, or out-of-turn actions return a stable error and do not mutate gameplay state or consume the turn. Their expected `input_seq` still advances replay metadata and is durably recorded after Phase 16.
+- Invalid, unaffordable, dead-actor, or out-of-turn actions return `input_result` with `outcome: rejected` and the applicable stable `reason_code`; they never return an `error` envelope for the semantic rejection. They do not mutate gameplay state or consume the turn. Their expected `input_seq` still advances replay metadata and is durably recorded after Phase 16.
 - An actor at zero HP is dead and removed from future turns. Combat ends when all enemies are dead or all player characters are dead; a party wipe produces the failed-run summary.
 - `attack` checks the attacker's `strength` using the locked d100 resolver. Normal success deals `max(1, floor(strength / 5))` damage; critical success deals twice that value; failure and critical failure deal zero. Critical failure has no additional self-damage in v1. Damage is applied after the dice event and before death events.
 - A spell is immutable built-in engine data with exact `id`, `check_stat`, `resource_cost`, `target_side`, `effect_kind`, `normal_amount`, and `critical_amount`. The v1 catalog is checked in as `game_rules_v1.json`, canonicalized with RFC 8785, and its SHA-256 is recorded in the Phase 07 acceptance transcript and release manifest. `effect_kind` is `damage`, `heal`, or `restore_resource`; no status-effect scripting exists in v1. A cast deducts cost, performs one d100 check, applies normal/critical amount on success, and applies zero effect on failure. Cost remains spent on a failed roll but not on an invalid action.
@@ -546,8 +549,13 @@ Audio channels for v1:
   - `cargo fmt --all --check`
   - `cargo clippy --locked --all-targets --all-features -- -D warnings`
   - `cargo test --locked --all-features`
+  - `cargo test --locked --doc --all-features`
+  - `RUSTDOCFLAGS="-D warnings" cargo doc --locked --no-deps --all-features`
   - `cargo audit --file Cargo.lock`
-- Linux and Windows release targets must compile in CI before Phase 02 completes. Native `raylib` and later Steamworks acquisition, versions, linkage, and licenses are pinned in build documentation rather than inferred from a developer machine.
+  - `cargo deny check`
+- `cargo-deny` and its configuration are pinned in the same tool manifest as `cargo-audit`. Advisory scanning establishes a lead, not reachability; any exception records the advisory/license/source, owner, rationale, expiry, and validation evidence.
+- Before Phase 01 completes, build documentation pins the `raylib-rs` crate, native `raylib` source/archive and checksum, system-versus-bundled policy, static/dynamic linkage, target prerequisites, and license obligations. It also pins the Steamworks Rust/native SDK acquisition and license policy even though authenticated integration lands later. No native dependency may be inferred from a developer machine.
+- Linux and Windows release targets must compile in CI before Phase 02 completes. The exact native dependency documents and checksums are completion evidence for that gate.
 - Reproducibility acceptance builds each target twice from separate clean checkouts with the same pinned source, lockfile, toolchain, native SDKs, target, release profile, environment, and `SOURCE_DATE_EPOCH`. Version/timestamp metadata is normalized. After stripping per policy, executable, packaged assets, manifest, and archive checksums must match byte-for-byte; any documented platform-signature envelope is compared after removing only that envelope. Commands, container/image digest, checksums, and any allowed nondeterminism are retained.
 - Windows release executables and installers are Authenticode-signed. The private key resides in a non-exportable managed signing service or hardware-backed CI identity, is unavailable to pull-request jobs and developers, and signs only protected release-tag workflows after artifact checksum approval. CI verifies chain, subject, timestamp, and file digest before depot handoff. Linux packages publish SHA-256 checksums and provenance; signing/provenance secrets follow the same protected-job boundary.
 - Outside pull requests are not accepted until a qualified legal review supplies an explicit inbound contribution policy requiring an appropriate written contributor agreement. Steam distribution likewise requires reviewed end-user terms and a third-party notice/license inventory before Release-ready exit.
@@ -571,6 +579,15 @@ Retention defaults are maxima unless law, an active security incident hold, or a
 | QA/benchmark artifacts | Restricted project storage; maintainers/testers | Raw logs/samples `90 days`, summaries without identifiers retained for release history |
 | Hub account/content | Postgres/R2; service and authorized moderation roles | Until account/content deletion or policy-defined takedown; public bytes removed through reference-counted deletion, backups expire within `30 days` |
 | Moderation audit records | Restricted Postgres tables; authorized moderators only | `1 year`, with payload minimization and provider subject pseudonymization after account deletion unless legally required |
+
+Versioned synthetic conformance and benchmark fixtures, workload definitions, expected counters, minimized non-sensitive fuzz regressions, and redacted summaries are source artifacts rather than raw operational data and are retained for the supported release history. They contain no account identifiers, credentials, production logs, or personal data. The `90-day` limit applies to raw run samples, captures, and operational logs.
+
+## Client-Local Settings v1
+
+- The client stores one UTF-8 JSON object capped at `64 KiB` with required `client_settings_version: 1`, audio-channel volumes, key bindings, display mode, and behavior-neutral accessibility/presentation preferences. It never contains authoritative run state, Steam tickets, rejoin tokens, provider subjects, or server endpoints.
+- Missing settings use documented built-in defaults. Malformed, oversized, unsupported-future, or too-old settings are preserved for diagnosis, ignored with one redacted diagnostic, and replaced in memory by defaults while the first interactive screen clearly reports recovery; startup must not panic.
+- Writes use a same-directory temporary file, file sync, atomic rename, and directory sync where the platform supports it. A failed write leaves the previous valid file intact.
+- Migration is pure and idempotent. Version `1` has no previous positive version; once version `2` exists, readers support exactly `2` and `1`. Downgrade never destructively rewrites a newer file.
 
 ## Community Website (Post-MVP)
 
@@ -635,7 +652,7 @@ Creator content tiers (rollout):
 - no full multiplayer requirement yet
 - may use one hardcoded debug character until the Phase 08 data-driven roster exists
 
-### MVP Exit
+### Playable MVP Exit
 
 - Scripted deterministic `2`, `3`, and `4` client scenarios converge on identical state revisions and event IDs.
 - Admission boundary tests cover session `64/65`, player `256/257`, a fifth player, simultaneous joins, leave/re-admit, and stable rejection codes.
@@ -646,7 +663,7 @@ Creator content tiers (rollout):
 ### Release-ready Exit
 
 - Deterministic disconnect, reconnect, late-message, duplicate-input, takeover, and resync-ack tests pass without sleeps or unexplained intermittent results.
-- Current and previous save versions restore exact authoritative state after injected failures at every write/rename checkpoint; corrupt/future/oversized snapshots fail safely.
+- The current save version and the immediately previous positive version when one exists restore exact authoritative state after injected failures at every write/rename checkpoint; corrupt/future/oversized snapshots fail safely.
 - Hosted staging smoke tests cover create, join, rejoin, deploy/restart restore, graceful shutdown, and rollback on both target OS clients.
 - All locked client/server budgets in `docs/benchmark-plan.md` pass on release artifacts with no unexpected errors or disconnects.
 - `docs/qa-plan.md` reports `PASS`, and blocker/critical defects are zero.

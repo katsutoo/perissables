@@ -19,7 +19,7 @@
 | Story content | JSON + validator tooling | Story definitions, branching events, encounters, metadata |
 | Theme system | Asset manifests + per-theme packs | Tilesets, props, ambience, music, combat backdrops, UI skin references |
 | Error handling | `thiserror` + `anyhow` | Domain errors plus startup/tooling context with explicit boundaries |
-| Quality baseline | Locked `cargo --locked` checks plus test, QA, security, and benchmark plans | Reproducible reliability evidence; exact commands and toolchain live in `docs/mvp-contract.md` |
+| Quality baseline | Locked `cargo --locked` format, lint, test, doctest, docs, advisory, license/source-policy checks plus test, QA, security, and benchmark plans | Reproducible reliability evidence; exact commands and toolchain live in `docs/mvp-contract.md` |
 | Release automation | GoReleaser | Tagged Linux/Windows builds, packaging, checksums |
 | Distribution | Steam + Steamworks SDK | Authentication/ownership, lobbies, invites, and native depot distribution; achievements are post-MVP |
 
@@ -140,6 +140,7 @@ The `storycheck` CLI and the reusable pack schema/validation rules it enforces b
 - Startup owns one supervised task tree. Long-lived connection, session, persistence, heartbeat, and shutdown tasks are tracked in bounded `JoinSet`s or equivalent owners; cancellation is explicit, every join result is observed, and dropping a handle must not detach correctness-critical work. A session-task panic marks that session unavailable, records a redacted invariant failure, invokes the bounded safe-termination path, and cannot silently leave authority running elsewhere.
 - Blocking native/library work uses `spawn_blocking` only behind the global bounded concurrency limits in the contract. Shutdown stops admission, signals cancellation, waits for async owners, and accounts for non-cancellable blocking work inside the `20s` deadline.
 - `unsafe` is forbidden in game/domain crates. Native `raylib` and Steamworks calls stay behind small adapter modules; each unsafe block has a local `SAFETY` contract, public unsafe APIs are forbidden, callback lifetimes/thread affinity are tested, and Miri or platform sanitizers cover owned unsafe wrappers where supported.
+- Phase 01 build documentation fixes native `raylib` and Steamworks crate/SDK sources, checksums, linkage, target prerequisites, and licenses before client work depends on a developer machine. Adapters expose safe owned Rust types and keep native handles, callbacks, and thread affinity out of `game_core` and `shared`.
 - Follow `docs/test-strategy.md`, `docs/qa-plan.md`, `docs/security-model.md`, and `docs/benchmark-plan.md` for verification evidence and phase gates.
 - Small end-to-end slices before broad feature expansion.
 

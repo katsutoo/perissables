@@ -80,7 +80,7 @@ Switch environment presentation through data-driven theme loading.
 
 ### Phase 11 - UI Variants
 
-Support multiple UI skins while keeping behavior identical.
+Support multiple built-in UI skins while keeping behavior identical; schema v1 themes select them but cannot define new skin-token documents.
 
 ### Phase 12 - Lobby And Story Rotation
 
@@ -92,11 +92,11 @@ These phases move authority fully server-side, then harden sync and reconnect be
 
 ### Phase 13 - Authoritative Multiplayer And Staging Identity
 
-Move gameplay authority server-side using the already deterministic `game_core`; integrate Steam ticket validation for isolated staging, then validate scripted 2-4 player convergence and all admission boundaries. Depot packaging and final lobby/invite UX remain in Phase 18, but Phase 17 must not depend on an authentication path that does not exist yet.
+Move gameplay authority server-side using the already deterministic `game_core`; implement base transport/input sequences, revisions, event IDs, bounded ledgers/writers, and Steam ticket validation for isolated staging, then validate scripted 2-4 player convergence and all admission boundaries. Depot packaging and final lobby/invite UX remain in Phase 18, but Phase 17 must not depend on an authentication path that does not exist yet.
 
 ### Phase 14 - Reconnect And Sync Robustness
 
-Add resync, heartbeat, replay protection, and disconnect recovery.
+Harden the Phase 13 sequence/revision foundation across disconnects with token handoff, takeover, resync acknowledgement, heartbeat, replay rejection, and deterministic transport-chaos coverage.
 
 ### Tooling, Persistence, And Quality (15-17)
 
@@ -112,7 +112,7 @@ Persist runs server-side with versioned session snapshots and compatibility chec
 
 ### Phase 17 - QA, Balance, Performance
 
-Provision production-equivalent staging, execute the Phase 17 pre-release QA matrix and benchmark plans against production-profile core artifacts, and profile only measured hot paths. Regression tests already belong to the phases introducing behavior; final Steam/package QA follows in Phase 18.
+Provision production-equivalent staging, execute the Phase 17 pre-release QA matrix and benchmark plans against production-profile core artifacts/client candidates, and profile only measured hot paths. Regression tests already belong to the phases introducing behavior; final Steam/package QA and the complete final-artifact benchmark rerun follow in Phase 18.
 
 ### Release And Community Follow-Through (18-20)
 
@@ -120,7 +120,7 @@ These phases cover shipping, then the community hub (a committed follow-on built
 
 ### Phase 18 - Steam Packaging And Production Server
 
-Prepare and sign reproducible release builds, finalize Steam lobbies/invites and depot integration on top of the Phase 13 identity boundary, deploy the production game server, and rerun the complete QA/release matrix against the final candidate. Production binaries are distributed through Steam rather than public release pages.
+Prepare and sign reproducible release builds, finalize Steam lobbies/invites and depot integration on top of the Phase 13 identity boundary, create and drill the locked rollback manifest, deploy the production game server, and rerun the complete QA plus benchmark release matrix against the exact final candidate digests. Production binaries are distributed through Steam rather than public release pages.
 
 ### Phase 19 - Community Hub Foundation
 
@@ -128,7 +128,7 @@ Create the separate proprietary `les-perissables-hub` as a Rust `axum` + `maud` 
 
 ### Phase 20 - Moderation And Trust
 
-Because the hub hosts user-generated content (shared packs, likes, comments), moderation and privacy are the public Stage 2 launch gate, not a later add-on: publish a moderation policy and privacy policy, add report/flag plus admin delete/ban actions, anti-spam/upload limits, and account/content deletion. Once asset/format validation is also in place, enable Tier 2 (original-asset) packs.
+Because the hub hosts user-generated content (shared packs, likes, comments), moderation and privacy are the public Stage 2 launch gate, not a later add-on: publish a moderation policy and privacy policy, add report/flag plus admin delete/ban actions, anti-spam/upload limits, and account/content deletion. Tier 2 (original-asset) packs remain disabled until asset/format validation plus publication attestation, root-signed key-set, revocation delivery, rotation, and client verification are also complete.
 
 ## Definition Of Done For Every Phase
 

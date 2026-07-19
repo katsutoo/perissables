@@ -28,11 +28,16 @@ This directory is split by purpose so product vision, locked MVP decisions, and 
 
 ## Document Rules
 
-- `docs/mvp-contract.md` is authoritative for exact values and behavior. Supporting documents may repeat a value only where an example, phase checklist, or executable verification plan needs it; the repetition must cite the contract section and must be updated in the same change.
+- `docs/mvp-contract.md` is authoritative for exact values and behavior. Supporting documents may repeat a value only where an example, phase checklist, or executable verification plan needs it. A nearby reference to the authoritative contract file/heading is sufficient; every derived repetition must be updated in the same change and loses any conflict to the contract.
 - Dedicated verification plans are normative for how locked behavior is tested, secured, exercised, and measured; they must not redefine product or protocol values.
 - Use the other docs for explanation, examples, rationale, and planning. If explanatory text introduces a new product or protocol requirement, move that requirement into the contract and reference it from the supporting document.
 - Use `docs/progress-tracker.md` as the built-in execution checklist; move extra day-to-day task detail into issues or a project board if the tracker becomes too granular.
 
 ## Repository Coverage
 
-These documents are authoritative only for the `perissables` game/runtime repository and its planned integration contracts. The separate `les-perissables-stories` and `les-perissables-hub` repositories must each maintain their own README, architecture, security, test, QA, and benchmark documentation appropriate to their scope. Creating either repository includes recording its URL and pinned commit/release relationship here; this repository must not claim those projects were reviewed before they exist.
+These documents are authoritative only for the `perissables` game/runtime repository and its planned integration contracts. The separate `les-perissables-stories` and `les-perissables-hub` repositories must each maintain their own README, architecture, security, test, QA, and benchmark documentation appropriate to their scope. This table is the canonical relationship record and must be updated in the same change that creates or repins either repository; this repository must not claim those projects were reviewed before they exist.
+
+| Repository | Status | URL | Pinned relationship |
+| --- | --- | --- | --- |
+| `les-perissables-stories` | Planned for Phase 01; not yet created/reviewed | Not assigned | Not assigned |
+| `les-perissables-hub` | Planned for Phase 19; not yet created/reviewed | Not assigned | Not assigned |

@@ -2,7 +2,9 @@
 
 Status: Normative verification policy
 Owner: Project team
-Updated: 2026-07-11
+Updated: 2026-07-19
+
+Authority: automated-test methodology and evidence rules are normative here; tested product/protocol values derive from the named locked sections of `docs/mvp-contract.md`.
 
 ## Purpose
 
@@ -27,7 +29,7 @@ Tests protect observable behavior and locked invariants. They do not replace QA,
 | Schema/conformance | Shared byte-level behavior | Valid/invalid documents, RFC 8785 vectors, checksum corpus, portable paths |
 | State-machine transcript | Authoritative transitions | Story branches, combat actions, death/wipe, reset, stable revisions/events |
 | Protocol contract | Wire compatibility and rejection | Every payload/direction, versions, sequence boundaries, close/error behavior |
-| Multi-client integration | Convergence and authority | Scripted 2/3/4 clients, simultaneous joins, stale/replayed input, reconnect |
+| Multi-client integration | Convergence and authority | Scripted 2/3/4 clients, simultaneous joins, leave/re-admit, stale/replayed input, reconnect/token handoff |
 | Persistence integration | Crash-safe continuation | Current and immediately previous positive migration when that previous version exists, corrupt/future/oversized state, every write fault point |
 | Release-artifact smoke | Shipped behavior | Startup, full run, hosted join/rejoin/restore on Linux and Windows |
 
@@ -37,7 +39,8 @@ Tests protect observable behavior and locked invariants. They do not replace QA,
 - Exhaustively test the d100 resolver for `0..=100`; test RNG v1 with official ChaCha20 known-answer vectors, rejection-threshold words, serialized resume at every word index, transaction rollback, and fixed expected outputs, never probabilistic frequency assertions.
 - Inject separate fake monotonic and Unix wall clocks. Use monotonic time for token buckets, heartbeat, turn/vote/summary deadlines, idle timeout, snapshot cadence, and retry delays. Test absolute session/token expiry across restart downtime, `1s` wall-clock rollback tolerance, rollback beyond `1s` fail-closed behavior, and forward jumps. Test just before, at, and just after every boundary.
 - Run protocol tests with deterministic fragmentation, duplicate, stale, gap, reconnect, and slow-writer schedules. Persist the seed and schedule for every failure.
-- Verify every valid persisted state produces a `ClientResyncState` within its separate cap and never contains token digests, RNG state, or hidden player data.
+- Maintain an analytical worst-case encoded-size proof for every projection DTO and event/output bundle from the locked field/count/string bounds. Back it with boundary-complete generated-state property tests plus explicit maximum lobby/world/story/combat/summary fixtures. Differential projections for two recipients assert that token digests, RNG state, other players' inventories/votes, hidden triggers, and server-only fields never serialize. Tests sample the state space; the proof, type/validator bounds, and maximum fixtures establish the universal cap claim.
+- Model the per-player unresolved-input ledger and unified writer queue with deterministic schedules covering zero through limit-plus-one entries, continuous supersession before/after discrete input, delayed ticks, mailbox/control-slot saturation, leave as a terminal input, persistence rollback, and reconnect. On append/fsync failure, assert every affected unresolved suffix is discarded, each admission frontier resets to its lowest discarded sequence, byte-identical retry from that frontier succeeds, and no higher input remains admitted. Also assert globally ascending results, no sequence consumption on `busy`, at most eight results per player/batch, and total queued bytes never above the contract cap.
 
 ## Pack Fuzzing
 

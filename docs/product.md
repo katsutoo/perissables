@@ -17,7 +17,7 @@ Example story pack:
 - Map: one compact TMX grocery floor with blocked shelves, freezers, and checkout lanes
 - Hook: the night crew vanished after opening a pallet of cursed discount spices
 - Core choices: inspect the spill, break into storage, calm a panicking NPC, or flee deeper into the store
-- Failure escalation: alarms, possessed shopping carts, freezer burn status effects, and an encounter with a Frozen Pizza Golem
+- Failure escalation: alarms, possessed shopping carts, freezer-burn damage/flavor, and an encounter with a Frozen Pizza Golem
 
 Example party:
 

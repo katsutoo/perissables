@@ -2,7 +2,9 @@
 
 Status: Normative review and verification scope
 Owner: Project team
-Updated: 2026-07-11
+Updated: 2026-07-19
+
+Authority: threat scope and verification policy are normative here; concrete product/protocol controls and limits derive from the named locked sections of `docs/mvp-contract.md`.
 
 ## Objectives And Assets
 
@@ -37,14 +39,15 @@ Owners are roles until named individuals are assigned in the phase evidence. Acc
 ## Required Controls
 
 - Connect only to the trusted environment allowlist; lobby metadata cannot choose an endpoint. Production uses standard certificate-chain/hostname verification, TLS `1.2+` with no user bypass or plaintext fallback, and no direct origin path that bypasses the trusted proxy. Validate Steam proof for the expected app/ownership before issuing or accepting credentials.
-- Bind connection authority to validated identity, session, player, and token generation. Envelope IDs are consistency checks, not authorization credentials.
+- Bind connection authority to validated identity, session, player, and token generation. Envelope IDs are consistency checks, not authorization credentials. Rejoin rotation uses the durable pending-handoff/acknowledgement state; neither a dropped response nor an old generation may create two authoritative connections.
 - Store rejoin and web-session secrets as keyed digests with rotation and absolute expiry. Never log or persist raw tickets/tokens, and redact them from errors, traces, screenshots, and benchmark artifacts.
 - Enforce every contract limit before allocation or expensive parsing where possible. Bound sockets, handshakes, tasks, queues, retries, decoded data, parser depth, fan-out, storage, and session lifetime.
-- Treat checksums as canonical logical-content equality, not raw archive-byte equality or authenticity. The server computes/loads its own validated pack and never trusts a client-supplied digest as authority.
+- Treat checksums as canonical logical-content equality, not raw archive-byte equality or authenticity. The server computes/loads its own validated pack and never trusts a client-supplied digest as authority. Tier 2 authenticity uses only the exact root-signed key-set, fresh revocation-list, and domain-separated attestation contract; stale metadata fails closed before activation.
 - Accept only the locked regular-file ZIP subset; disable XML external access and all parser/network side effects; use isolated temporary storage and remove it on every outcome.
 - Deny authorization by default for pack edit/delete, account deletion, moderation, and administrative actions. Audit admin actions without storing sensitive payloads.
 - OAuth uses provider-scoped subjects, state, PKCE where supported, exact callbacks, secure `HttpOnly`/`SameSite` cookies, CSRF protection, session rotation/revocation, and reauthentication for account linking or admin-sensitive actions.
-- Uploaded objects remain private and immutable through validation. Publication follows the contract's idempotent R2/Postgres state machine with quota reservation, expiry cleanup, reconciliation, reference-counted unlisting/deletion, and no claim of a cross-service transaction. Overwriting a validated generation is forbidden.
+- Uploaded objects remain private and immutable through validation. Publication follows the contract's idempotent R2/Postgres state machine with quota reservation, expiry cleanup, reconciliation, reference-counted unlisting/deletion, and no claim of a cross-service transaction. Overwriting a validated generation is forbidden. Signing keys are separated by publication/revocation usage; the offline root never signs packs or runs in the hub application.
+- Persistence reserves terminal WAL capacity, caps all retained/quarantined artifacts and startup scans, persists per-seat grace/token-handoff state, and quarantines a session with no valid restore path. Corrupt state never re-enters admission automatically.
 - Render all UGC as escaped plain text under restrictive CSP and security headers. Downloads use fixed safe content types, `nosniff`, attachment disposition, and a cookie-less public origin; private object URLs are short-lived and single-object.
 - Enforce the contract retention table for logs, backups, sessions, moderation records, crash uploads, and verification artifacts. Deletion requests remove live data promptly and document finite provider-backup expiry rather than promising impossible immediate erasure.
 

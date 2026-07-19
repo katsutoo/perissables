@@ -1,5 +1,7 @@
 # Content Packs
 
+Authority: exact schema, TMX, archive, attestation, checksum, tier, and asset behavior derives from "Locked Content Conventions" and "Locked Pack Compatibility And Checksums" in `docs/mvp-contract.md`. This document explains the creator model and examples.
+
 ## Core Idea
 
 The game engine is proprietary, but the story format is meant to be open enough that creators can build new adventures without touching engine code.
@@ -12,6 +14,8 @@ The runtime should be able to load:
 - pack metadata used for compatibility checks
 
 ## Example Content Early
+
+The JSON snippets below are illustrative shape examples, not validator fixtures. Ellipses, placeholder checksums, and intentionally empty story arrays are not accepted by the strict schema; canonical valid examples will live in the versioned `les-perissables-stories` conformance corpus.
 
 Example story metadata:
 
@@ -117,7 +121,7 @@ Example pack manifest:
 
 ## Aggregate Pack Model
 
-One MVP session uses one aggregate archive and one compatibility tuple. The archive may contain any combination of the content categories below; they are categories inside the aggregate pack, not independently negotiated multiplayer dependencies.
+One MVP session uses one aggregate archive and one compatibility tuple. The archive requires at least one story and may contain any supported combination of the other content categories below; they are categories inside the aggregate pack, not independently negotiated multiplayer dependencies.
 
 ### Story Packs
 
@@ -125,7 +129,7 @@ Define maps, events, choices, checks, and encounters. Stories should be fully ru
 
 ### Character Packs
 
-Define premade food characters with stats, traits, spell lists, text flavor, and asset references.
+Define premade food characters with stats, spell lists, names/groups, starting items, and asset references.
 
 ### Theme Packs
 
@@ -154,7 +158,7 @@ No new asset files are added, so every pack looks and sounds on-brand. Tier 1 st
 Creators may additionally ship their own presentation so a pack fully matches its own setting (for example a haunted mansion or a space station rather than a grocery store):
 
 - Original tilesets, maps, character sprites, music, ambience, SFX, and combat backdrops.
-- Original UI/theme manifests (visual skin variants).
+- Original theme manifests that still select one shipped behavior-neutral UI variant; custom skin-token documents are outside schema v1.
 
 All original assets must conform to the locked conventions in `docs/mvp-contract.md` (16x16 tiles, sprite frame order/naming, TMX layer/object rules, Ogg Vorbis/PCM WAV decoder formats, channel/sample-format limits, and sample rate). Tier 2 is enabled only after the community hub has submission rules, asset/format validation, and moderation/abuse controls, because arbitrary uploaded art and audio raise moderation, licensing/IP, distribution, and untrusted-file-handling concerns.
 
@@ -164,14 +168,14 @@ The schema supports custom asset references from the start. Release builds load 
 
 A simple rule governs what creators can and cannot change:
 
-- Data (creator-controllable): presentation (tilesets, sprites, audio, backdrops, UI skins) and narrative (story branching, checks, encounters, character stat/spell composition, flavor text).
-- Engine (fixed, proprietary): combat rules, the d100 dice system and its locked limits, spell behaviors/effects, and UI behavior (visual skinning only, per the MVP non-goals).
+- Data (creator-controllable): presentation (tilesets, sprites, audio, backdrops, and theme asset manifests) and narrative (story branching, checks, encounters, and character stat/spell composition).
+- Engine (fixed, proprietary): combat rules, the d100 dice system and its locked limits, spell behaviors/effects, UI behavior, and the built-in skin-token sets.
 
 Creators re-author and reskin the world to fit their own idea, but they play by the same rules and reuse the engine's spell/effect library. New mechanics or new spell effects require engine support and are out of scope for data packs.
 
 ## Sharing And Attribution
 
-Packs are shared through the community hub (`les-perissables-hub`), where creators sign in with Discord or GitHub. The uploading account controls its listing and supplies rights/attribution information; uploading alone is not proof of copyright ownership. Other players can like and comment after the public UGC gate. See `docs/mvp-contract.md` for the normative licensing, identity, moderation, and privacy requirements.
+Packs are planned to be shared through the future community hub (`les-perissables-hub`), where creators will sign in with Discord or GitHub. The uploading account will control its listing and supply rights/attribution information; uploading alone will not prove copyright ownership. Other players may like and comment only after the public UGC gate. See "Community Website" and "Community Content And Licensing Boundary" in `docs/mvp-contract.md` for normative requirements.
 
 ## Repo Boundary
 
@@ -182,7 +186,7 @@ Planned split:
 
 That boundary matters because the goal is to let creators author new data without granting rights to the game runtime itself.
 
-The reusable pack schema and validation rules live as an MIT library crate in `les-perissables-stories`, alongside the `storycheck` CLI that fronts it, so creators can validate packs without touching the proprietary repo. Everything that validates packs depends on the same pinned crate release and conformance corpus: the game loader, `storycheck`, and the proprietary `les-perissables-hub`. The hub is a single-crate app, not a multi-crate workspace.
+After Phase 01 creates `les-perissables-stories`, the reusable pack schema and validation rules will live there as an MIT library crate alongside the `storycheck` CLI. Everything that validates packs will depend on the same pinned crate release and conformance corpus: the game loader, `storycheck`, and the future proprietary `les-perissables-hub`. The planned hub is a single-crate app, not a multi-crate workspace.
 
 ## Compatibility Rule
 

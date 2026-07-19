@@ -1,5 +1,7 @@
 # Architecture
 
+Authority: exact workspace, toolchain, runtime, persistence, protocol, and release values derive from the corresponding locked sections of `docs/mvp-contract.md`. This document explains structure and rationale only.
+
 ## Architecture Goals
 
 - Keep the runtime small, explicit, and easy to reason about.
@@ -17,7 +19,7 @@
 | Networking | `axum` WebSockets on `tokio` | Client input transport and authoritative state/event updates |
 | Serialization | `serde` + `serde_json` | Protocol payloads, story parsing, save/load data, tooling I/O |
 | Story content | JSON + validator tooling | Story definitions, branching events, encounters, metadata |
-| Theme system | Asset manifests + per-theme packs | Tilesets, props, ambience, music, combat backdrops, UI skin references |
+| Theme system | Asset manifests + per-theme packs | Tilesets, props, ambience, music, combat backdrops, built-in behavior-neutral UI variant references |
 | Error handling | `thiserror` + `anyhow` | Domain errors plus startup/tooling context with explicit boundaries |
 | Quality baseline | Locked `cargo --locked` format, lint, test, doctest, docs, advisory, license/source-policy checks plus test, QA, security, and benchmark plans | Reproducible reliability evidence; exact commands and toolchain live in `docs/mvp-contract.md` |
 | Release automation | GoReleaser | Tagged Linux/Windows builds, packaging, checksums |
@@ -60,7 +62,7 @@ Phases 03-09 build gameplay before Phase 13 moves authority server-side. That mi
 
 - No `raylib` types, rendering, input, or audio dependencies anywhere in `game_core`.
 - No filesystem, network, wall-clock, environment-variable, or process-global access. Storage I/O stays in `server`; `game_core::save` contains versioned DTOs and pure migrators only.
-- All randomness and logical time are explicit state-machine inputs. The stable RNG algorithm/version/state and logical tick are serializable so restore and deterministic tests continue exactly.
+- All randomness and logical time are explicit state-machine inputs. The session owner supplies fresh per-run CSPRNG entropy through `StartRunEntropy`; stable RNG algorithm/version/state and logical tick are serializable so restore and deterministic tests continue exactly.
 - Rules use logical durations rather than assuming the caller's update frequency. The client may call the core from a `60 Hz` presentation loop before Phase 13, but authoritative rule advancement remains compatible with the server's `20 Hz` tick.
 - State advances only through explicit player intents or explicit scheduler `Tick` inputs and returns state revisions plus stable events/results; the client renders from those and never reaches into mutable game logic.
 
@@ -120,15 +122,15 @@ stories/
   builtin/
 ```
 
-The initial workspace members are `client`, `server`, `game_core`, `shared`, and `integration_tests`; their package names are `les-perissables-client`, `les-perissables-server`, `les-perissables-game-core`, `les-perissables-shared`, and `les-perissables-integration-tests`. `shared` owns protocol DTOs and IDs, `game_core` depends on `shared` plus the pinned MIT schema crate, `client` and `server` depend on `shared` and `game_core`, and `integration_tests` may depend on all workspace crates. Reverse dependencies and cycles are forbidden.
+The exact initial workspace members, package names, and dependency direction are locked in `docs/mvp-contract.md` under "Locked Architecture Decisions." The structure above visualizes that contract; it does not redefine it.
 
-`stories/builtin/` contains ARR built-in game content. MIT schemas, conformance fixtures, creator examples, and the canonical authoring tutorial live only in `les-perissables-stories`. Downloaded community packs are installed under the locked per-user data root at runtime and are never committed under a main-repo `stories/community/` source directory.
+`stories/builtin/` will contain ARR built-in game content. MIT schemas, conformance fixtures, creator examples, and the canonical authoring tutorial will live only in `les-perissables-stories` after that repository is created in Phase 01. Downloaded community packs will be installed under the locked per-user data root at runtime and never committed under a main-repo `stories/community/` source directory.
 
-`rust-toolchain.toml` pins Rust `1.95.0` with edition/MSRV `2024`/`1.95.0`; `Cargo.lock` is committed. `mise.toml` is local-development tooling only. CI installs Rust with `rustup`/standard Rust tooling and runs the locked `cargo --locked` checks directly rather than invoking `mise` tasks.
+Phase 01 will add `rust-toolchain.toml` pinned to Rust `1.95.0` with edition/MSRV `2024`/`1.95.0`, commit `Cargo.lock`, and add local-development-only `mise.toml`. CI will install Rust with `rustup`/standard Rust tooling and run the locked `cargo --locked` checks directly rather than invoking `mise` tasks. These values derive from "Locked Repo/Legal/CI Baseline" in `docs/mvp-contract.md`.
 
-Workspace-level integration tests live in a dedicated `crates/integration_tests` member so Cargo runs them in CI. Per-crate tests remain in each crate's own `tests/` directory. Graphics behavior that depends on `raylib` or a real display is verified through deterministic renderer/unit seams and the release-artifact matrix in `docs/qa-plan.md` unless a headless harness is explicitly added; do not add a root-level `tests/graphics` directory that CI silently ignores.
+Phase 01 will place workspace-level integration tests in the dedicated `crates/integration_tests` member so Cargo runs them in CI. Per-crate tests will remain in each crate's own `tests/` directory. Graphics behavior that depends on `raylib` or a real display is verified through deterministic renderer/unit seams and the release-artifact matrix in `docs/qa-plan.md` unless a headless harness is explicitly added; do not add a root-level `tests/graphics` directory that CI silently ignores.
 
-The `storycheck` CLI and the reusable pack schema/validation rules it enforces both live in the separate MIT `les-perissables-stories` repo; the CLI is a thin front-end over that library crate. Keeping the CLI out of the proprietary repo means creators can install and run the validator without any access to game code, while the game loader and the community hub still validate packs through the same shared crate.
+After the separate MIT `les-perissables-stories` repository is created, the `storycheck` CLI and reusable pack schema/validation rules will live there; the CLI will be a thin front-end over that library crate. Keeping the CLI out of the proprietary repo lets creators install and run the validator without game-code access, while the game loader and future community hub validate packs through the same pinned shared crate.
 
 ## Engineering Practices
 

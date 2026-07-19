@@ -22,7 +22,7 @@ The project works because the joke is loud but the scope is disciplined:
 
 ## Document Boundary
 
-`docs/mvp-contract.md` is the single source of truth for locked MVP decisions. The other docs are for explanation, examples, rationale, and planning.
+`docs/mvp-contract.md` is the single source of truth for locked product/protocol decisions. The dedicated test, QA, security, and benchmark plans are normative for verification methodology and evidence without redefining those values; the remaining docs are explanation, examples, rationale, and planning.
 
 ## Why This Shape
 

@@ -1,4 +1,4 @@
-# Les Périssables
+# Les Périssables ༼⁠ ⁠つ⁠ ⁠◕⁠‿⁠◕⁠ ⁠༽⁠つ
 
 A stupid, fun, multiplayer tabletop RPG where players pick premade food characters,
 run story-driven adventures, and survive dice/combat events together.

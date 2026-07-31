@@ -126,7 +126,7 @@ The exact initial workspace members, package names, and dependency direction are
 
 `stories/builtin/` will contain ARR built-in game content. MIT schemas, conformance fixtures, creator examples, and the canonical authoring tutorial will live only in `les-perissables-stories` after that repository is created in Phase 01. Downloaded community packs will be installed under the locked per-user data root at runtime and never committed under a main-repo `stories/community/` source directory.
 
-Phase 01 will add `rust-toolchain.toml` pinned to Rust `1.95.0` with edition/MSRV `2024`/`1.95.0`, commit `Cargo.lock`, and add local-development-only `mise.toml`. CI will install Rust with `rustup`/standard Rust tooling and run the locked `cargo --locked` checks directly rather than invoking `mise` tasks. These values derive from "Locked Repo/Legal/CI Baseline" in `docs/mvp-contract.md`.
+Phase 01 will add `rust-toolchain.toml` pinned to Rust `1.97.1` with edition/MSRV `2024`/`1.97.1`, commit `Cargo.lock`, and add local-development-only `mise.toml`. CI will install Rust with `rustup`/standard Rust tooling and run the locked `cargo --locked` checks directly rather than invoking `mise` tasks. These values derive from "Locked Repo/Legal/CI Baseline" in `docs/mvp-contract.md`.
 
 Phase 01 will place workspace-level integration tests in the dedicated `crates/integration_tests` member so Cargo runs them in CI. Per-crate tests will remain in each crate's own `tests/` directory. Graphics behavior that depends on `raylib` or a real display is verified through deterministic renderer/unit seams and the release-artifact matrix in `docs/qa-plan.md` unless a headless harness is explicitly added; do not add a root-level `tests/graphics` directory that CI silently ignores.
 

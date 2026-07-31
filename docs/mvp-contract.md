@@ -629,7 +629,7 @@ Audio channels for v1:
 - Stories repo (`les-perissables-stories`): add MIT `LICENSE`, `README.md` when Phase 01 creates it
 - The stories repo will host both the MIT pack schema/validation crate and the `storycheck` CLI, so creators can validate packs without any proprietary game-repo code
 - Shared validation package name: `les-perissables-pack`. Release it from `les-perissables-stories` to crates.io with a matching repository tag; game and hub consumers pin the same exact crate release in workspace dependencies and `Cargo.lock`. Production builds do not follow a moving Git branch.
-- Rust toolchain: `1.95.0`, edition `2024`, and MSRV `1.95.0`, pinned in `rust-toolchain.toml`. Toolchain changes are explicit contract updates.
+- Rust toolchain: `1.97.1`, edition `2024`, and MSRV `1.97.1`, pinned in `rust-toolchain.toml`. Toolchain changes are explicit contract updates.
 - Commit the workspace `Cargo.lock`; CI and release builds use `--locked`. Git dependencies require an immutable revision, and published crates use exact compatible version requirements plus lockfile resolution.
 - `mise` is for local developer convenience only: `mise.toml` may pin tools and expose tasks, but CI must not depend on `mise`
 - CI installs Rust through `rustup`/standard Rust tooling, pins `cargo-audit` to `0.22.1`, and runs the locked `cargo` checks directly. Initial features must be mutually compatible; if that changes, replace `--all-features` with an explicit supported-feature matrix.

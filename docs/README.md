@@ -35,7 +35,7 @@ This directory is split by purpose so product vision, locked MVP decisions, and 
 
 ## Repository Coverage
 
-These documents are authoritative only for the `perissables` game/runtime repository and its planned integration contracts. The separate `les-perissables-stories` and `les-perissables-hub` repositories must each maintain their own README, architecture, security, test, QA, and benchmark documentation appropriate to their scope. This table is the canonical relationship record and must be updated in the same change that creates or repins either repository; this repository must not claim those projects were reviewed before they exist.
+These documents are authoritative only for the `perissables` game/runtime repository and its planned integration contracts. The separate `les-perissables-stories` and `les-perissables-hub` repositories must each maintain their own README, architecture, security, test, QA, and benchmark documentation appropriate to their scope. Until the hub exists, its contract section here is a bootstrap plan; Phase 19 must move internal hub architecture, database, OAuth, moderation, and operations requirements into that repository, leaving only game-facing pack, attestation, publication, and provisioning interfaces here. This table is the canonical relationship record and must be updated in the same change that creates or repins either repository; this repository must not claim those projects were reviewed before they exist.
 
 | Repository | Status | URL | Pinned relationship |
 | --- | --- | --- | --- |

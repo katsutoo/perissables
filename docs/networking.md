@@ -79,7 +79,7 @@ The plan is:
 - commit and return a pending rotation token, then require resync acknowledgement before promoting it or accepting new input
 - send a bounded player-specific authoritative resync and require acknowledgement before returning a player to active play
 - reject out-of-order or replayed input after reconnect
-- after Phase 16, persist session snapshots server-side so a Release-ready restart or deploy looks like an ordinary disconnect/reconnect; before Phase 16, run loss remains explicit pre-release behavior
+- after Phase 16, commit versioned session state through the dedicated SQLite persistence owner so a Release-ready restart or deploy looks like an ordinary disconnect/reconnect; before Phase 16, run loss remains explicit pre-release behavior
 
 ## Audio Rule
 

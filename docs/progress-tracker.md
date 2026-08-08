@@ -30,7 +30,7 @@ This checklist records derived status and may repeat a short identifying value n
 
 ## Phase 01 - Repo Bootstrap
 
-- [ ] 01.1 Initialize the five locked workspace members, root folders, committed `Cargo.lock`, and pinned `rust-toolchain.toml`
+- [ ] 01.1 Initialize the five locked workspace members, root folders, explicit virtual-workspace `resolver = "3"`, committed `Cargo.lock`, and pinned `rust-toolchain.toml`
 - [ ] 01.2 Create startup-only entrypoints for client/server plus minimal `game_core`, `shared`, and `integration_tests` crates with the locked dependency direction
 - [ ] 01.3 Add logging bootstrap (`crates/shared/src/logging.rs`) using `tracing` and `tracing-subscriber`
 - [ ] 01.4 Add local-dev-only `mise` tasks in `mise.toml`: `run-client`, `run-server`, `test`, `lint`, `security-scan`
@@ -38,8 +38,9 @@ This checklist records derived status and may repeat a short identifying value n
 - [x] 01.6 Add legal files and close outside pull requests pending a reviewed policy with written contributor agreement
 - [ ] 01.7 Create `les-perissables-stories` repo with MIT `LICENSE` and `README.md`; record its repository URL, initial commit SHA, release/tag policy, crate name, and main-repo pinning procedure in the canonical table in `docs/README.md` plus Phase 01 evidence (it hosts the schema/validation crate `game_core` depends on from Phase 04 and the `storycheck` CLI from Phase 15)
 - [ ] 01.8 Add starter CI that installs the pinned toolchain with `rustup`, runs locked baseline checks without `mise`, and compiles supported Linux/Windows targets
-- [ ] 01.9 Pin and document native `raylib` and Steamworks crate/SDK acquisition, checksums, linkage, target prerequisites, and licenses as required by the contract
-- [ ] 01.10 Phase 01 complete
+- [ ] 01.9 Pin and document native `raylib`, bundled SQLite/`rusqlite`, and Steamworks crate/SDK acquisition, checksums, compile/linkage policy, target prerequisites, and licenses as required by the contract
+- [ ] 01.10 Complete and retain Phase 01 feasibility evidence: actual Railway-volume SQLite locking/full-synchronous commit/crash/checkpoint/load qualification; Linux Landlock/seccomp and Windows AppContainer/Job Object fail-closed prototypes; availability plan for `256` authorized Steam test accounts and `19` real limiter-keyed source IPs; protected Windows signing path; and reproducible native builds. Any failed gate triggers a contract decision before dependent work starts
+- [ ] 01.11 Phase 01 complete
 
 ## Phase 02 - Render Loop And Scene Skeleton
 
@@ -66,12 +67,12 @@ This checklist records derived status and may repeat a short identifying value n
 
 ## Phase 04 - Story Schema v1
 
-- [ ] 04.1 Implement the complete schema v1 already defined in `docs/mvp-contract.md` in `les-perissables-stories`, including every required field, tagged variant, cross-reference, custom-map/TMX semantics, exact attestation/key-set/revocation schemas, Tier classification, event/projection proof, and locked bound
+- [ ] 04.1 Implement the complete schema v1 already defined in `docs/mvp-contract.md` in `les-perissables-stories`, including every required field, tagged variant, cross-reference, custom-map/TMX semantics, exact attestation/key-set/revocation schemas, Tier classification (including no community Tier 1 theme documents), event/projection proof, and locked bound
 - [ ] 04.2 Implement the schema Rust structs + loader/validation in that MIT crate (strict validation, helpful path-based errors)
 - [ ] 04.3 Have `game_core` depend on the MIT crate for the data model; its `story/` module holds runtime logic, not the schema definition
 - [ ] 04.4 Add table-driven tests for exact valid/invalid values, unknown fields, reference failures, and boundary-adjacent limits
-- [ ] 04.5 Add bounded fuzz targets and the shared canonicalization/checksum conformance corpus defined by `docs/test-strategy.md`
-- [ ] 04.6 Publish a versioned identifier catalog for shipped map/theme/sprite/audio/spell IDs without redistributing proprietary asset bytes
+- [ ] 04.5 Add bounded fuzz targets, supported-OS sandbox-negative suites, and the shared canonicalization/checksum conformance corpus defined by `docs/test-strategy.md`
+- [ ] 04.6 Publish a versioned identifier catalog for every shipped referenced namespace—including maps, themes, sprites, audio/cues, spells, items, speakers, UI variants, and fallback resources—without redistributing proprietary asset bytes
 - [ ] 04.7 Add an MIT canonical creator example in `les-perissables-stories` and a separate ARR built-in fixture in this repo
 - [ ] 04.8 Tag and publish the exact `les-perissables-pack` release to crates.io, pin it in this workspace/Cargo.lock, update the canonical relationship table in `docs/README.md`, and retain release/checksum/conformance evidence
 - [ ] 04.9 Phase 04 complete
@@ -81,7 +82,7 @@ This checklist records derived status and may repeat a short identifying value n
 - [ ] 05.1 Implement runtime state struct (current node, flags, completed events)
 - [ ] 05.2 Implement trigger resolver (tile position plus trigger ID)
 - [ ] 05.3 Implement dialogue panel and branching choice handling
-- [ ] 05.4 Implement side effects (set/unset flags, start encounter)
+- [ ] 05.4 Implement the exact effect set (`set_flag`, `unset_flag`, `give_item`, `remove_item`); encounter entry remains the locked `encounter` node transition, not an effect
 - [ ] 05.5 Add deterministic public-interface tests for story-actor selection/rebinding, checks/effects, vote replacement, branching, side-effect ordering, automatic-transition/event bounds, unreachable nodes, and dead ends
 - [ ] 05.6 Phase 05 complete
 
@@ -164,7 +165,7 @@ This checklist records derived status and may repeat a short identifying value n
 
 ## Phase 13 - Authoritative Multiplayer And Staging Identity
 
-- [ ] 13.1 Generate every locked leaf/message DTO schema in `les-perissables-shared`, check in positive/rejection conformance vectors, and implement the Phase 13 runtime subset (`join`, `join_response`, `input`, `state`, `event`, `input_result`, `error`, `notice`) plus base transport `seq`, per-player/session `input_seq`, state revision, event ID, output-order, and error-correlation rules needed for convergence
+- [ ] 13.1 Generate every locked leaf/message DTO schema in `les-perissables-shared`, check in positive/rejection conformance vectors, and implement the Phase 13 runtime subset (`join`, `join_response`, `input`, `state`, `event`, `input_result`, `error`, `notice`) plus base transport `seq`, per-player/session `input_seq`, state revision, event ID, output-order, owner-dequeue deadline ordering, exact `ClientView.party` membership/order, and error-correlation rules needed for convergence
 - [ ] 13.2 Implement server session lifecycle and lobby-to-run transition
 - [ ] 13.3 Move all authority server-side (movement, story state, combat, dice)
 - [ ] 13.4 Implement client intent messages only (never trust client outcomes)
@@ -181,7 +182,7 @@ This checklist records derived status and may repeat a short identifying value n
 
 - [ ] 14.1 Preserve and harden the Phase 13 transport/input sequences, revisions, and event IDs across reconnect, late/duplicate/gap schedules, and locked `u64` no-wrap boundaries
 - [ ] 14.2 Implement identity-bound reconnect, atomic in-memory pending-token handoff, repeated reconnect, dropped-response recovery, generation-guarded close handling, and single-connection takeover; Phase 16 makes these transitions crash-durable
-- [ ] 14.3 Implement `rejoin_response`, recipient-specific `ClientResyncState`, and atomic matching `resync_ack` promotion before accepting inputs; Phase 16 adds WAL/snapshot durability
+- [ ] 14.3 Implement `rejoin_response`, recipient-specific `ClientResyncState`, and atomic matching `resync_ack` promotion before accepting inputs; Phase 16 makes the complete handoff atomic in the committed SQLite session row
 - [ ] 14.4 Add ping/pong heartbeat and idle-timeout disconnect rules
 - [ ] 14.5 Add server-side sanity checks for illegal movement/actions
 - [ ] 14.6 Add duplicate/replay input protection using sequence validation
@@ -203,15 +204,15 @@ This checklist records derived status and may repeat a short identifying value n
 
 ## Phase 16 - Save And Resume
 
-- [ ] 16.1 Implement server-side snapshot `save_version: 1` and the locked current-plus-previous migration/rejection strategy
-- [ ] 16.2 Serialize `PersistedSessionSnapshot`, including logical tick, revision, next event/input frontiers, optional per-run RNG state/version, pack identity, current/pending token digests/generations, connection generations/grace expiries, and never raw bearer tokens; make Phase 13/14 grace/handoff transitions crash-durable
-- [ ] 16.3 Implement fenced held/released lease writes, staged-transition commit/publish/discard semantics, `56 MiB` soft plus reserved hard-cap WAL, common-low-watermark compaction, immutable snapshot generations, global artifact/file/quarantine caps, checkpoints, retries, fsync ordering, newest-valid restore, and bounded quarantine
-- [ ] 16.4 Restore snapshotted sessions on server startup so restarts/deploys do not destroy runs
-- [ ] 16.5 Implement resume validation using selected story ID plus aggregate pack ID/version/checksum, content schema version, game-rules version, and save version; clients never submit run state
-- [ ] 16.6 Add corruption handling (backup snapshot slot plus safe session-teardown message to affected players)
-- [ ] 16.7 Add current, immediately previous positive when one exists, future, corrupt, and oversized fixtures plus fault injection at every persistence checkpoint; version `1` records previous-version coverage as not applicable
+- [ ] 16.1 Implement the pinned bundled SQLite database through `rusqlite`: one supervised persistence thread/connection, exclusive process lock, required verified pragmas, bounded `128`-request partitioned queue, schema version `1`, parameterized SQL, and no Tokio-thread blocking
+- [ ] 16.2 Implement server-side `PersistedSessionSnapshot` `save_version: 1`, its `256 KiB` cap and SHA-256, current-plus-previous migration/rejection strategy, and one complete atomic session row containing logical tick, revision, next event/input frontiers, optional per-run RNG state/version, pack identity, current/pending token digests/generations, connection generations/grace expiries, and never raw bearer tokens
+- [ ] 16.3 Implement staged post-state group transactions with at most `20 ms` batching and commit-before-publish/discard semantics, one in-flight commit per session, bounded retries, `768 MiB` ordinary-work/`1 GiB` artifact/free-space limits, incremental cleanup, WAL checkpoints, final checkpoint/close, and process-lock lifecycle
+- [ ] 16.4 Restore active SQLite rows on startup after WAL recovery, required-pragma verification, bounded `quick_check`, checksum/version/domain validation, and exact downtime/grace handling so restarts/deploys do not destroy acknowledged runs
+- [ ] 16.5 Implement resume validation using selected story ID plus aggregate pack ID/version/checksum, content schema version, game-rules version, save version, and compatible `database_schema_version`; clients never submit run state
+- [ ] 16.6 Implement invalid-row quarantine that preserves bytes and returns `session_not_found`, plus database-level corruption/storage/quarantine failure that keeps readiness false for operator backup recovery and safely terminates affected live sessions when possible
+- [ ] 16.7 Add current, immediately previous positive when one exists, future, corrupt, and oversized row fixtures plus fault injection for SQLite open/busy/begin/write/commit/checkpoint, queue saturation, low-space/disk-full, crash, row-quarantine, and database-corruption paths; version `1` records previous-version coverage as not applicable
 - [ ] 16.8 Keep client-local saves for non-authoritative data only at locked per-OS roots
-- [ ] 16.9 Run deterministic release-mode local `restore-clean-v1`, `restore-crash-v1`, and `compaction-v1` qualification at maximum fixture state, including lease expiry/release and every rename/fsync interruption; freeze the Phase 16 snapshot/WAL fixture components before Phase 17
+- [ ] 16.9 Run deterministic release-mode `restore-clean-v1`, `restore-crash-v1`, and `sqlite-checkpoint-v1` qualification at maximum fixture state on the actual staging volume; freeze the Phase 16 database-schema/session-row/checkpoint/recovery fixture components before Phase 17
 - [ ] 16.10 Phase 16 complete
 
 ## Phase 17 - QA, Balance, Performance
@@ -231,7 +232,7 @@ This checklist records derived status and may repeat a short identifying value n
 - [ ] 18.3 Package runtime assets and verify path handling in release builds
 - [ ] 18.4 Finalize scoped Steamworks lobbies, invites, ownership UX, and depot integration on top of the Phase 13 ticket-validation boundary; achievements remain post-MVP
 - [ ] 18.5 Promote the already-tested Steam identity binding to production configuration and reverify expected-app/ownership enforcement without changing its protocol contract
-- [ ] 18.6 Promote the benchmarked staging shape to production with trusted WSS allowlist, health/readiness semantics, lease enforcement, structured logs, and graceful drain
+- [ ] 18.6 Promote the benchmarked staging shape to production with trusted WSS allowlist, health/readiness semantics, exclusive process-lock and SQLite recovery enforcement, encrypted volume-backup/restore configuration under the retention contract, structured logs, and graceful drain
 - [ ] 18.7 Store session metadata without an endpoint: `session_id`, protocol/content/rules versions, aggregate pack ID/version/checksum
 - [ ] 18.8 Add bounded local redacted crash-log rotation and hotfix playbook; any upload is separately informed, opt-in, redacted, and subject to the contract retention table
 - [ ] 18.9 Sign Windows artifacts through the protected non-exportable signing workflow and verify signature/timestamp/digest; publish Linux checksums/provenance
@@ -243,7 +244,7 @@ This checklist records derived status and may repeat a short identifying value n
 
 ## Phase 19 - Community Hub Foundation
 
-- [ ] 19.1 Create separate repository `les-perissables-hub` with legal files on day 1 (`COPYRIGHT` + ARR `LICENSE`); record its URL and pinned relationship in `docs/README.md`; scaffold Rust `axum` + `maud` + `htmx` app
+- [ ] 19.1 Create separate repository `les-perissables-hub` with legal files on day 1 (`COPYRIGHT` + ARR `LICENSE`); record its URL and pinned relationship in `docs/README.md`; move internal hub architecture/database/OAuth/moderation/test/QA/security/operations requirements out of this bootstrap contract while retaining game-facing integration here; scaffold Rust `axum` + `maud` + `htmx` app
 - [ ] 19.2 Add pinned locked CI checks plus an exact SQLx migration check against a pinned Postgres service image
 - [ ] 19.3 Deploy on Railway; wire the domain via Cloudflare DNS/CDN with TLS in front of the Railway app
 - [ ] 19.4 Configure secrets/env (Discord + GitHub OAuth credentials, `DATABASE_URL`, session signing key, R2 credentials)
@@ -251,7 +252,7 @@ This checklist records derived status and may repeat a short identifying value n
 - [ ] 19.6 Add Railway Postgres + `sqlx` with migrations and backups; define account/pack/like/comment schema
 - [ ] 19.7 Add provider-scoped OAuth identities, state/PKCE, exact callback allowlists, secure sessions, CSRF protection, revocation, and explicit reauthenticated linking
 - [ ] 19.8 Add immutable R2 upload/validation/publication with signed bounds, private random keys, server-side checksum, content-addressed public keys, and transactional metadata
-- [ ] 19.9 Add gated/private Tier 1 sharing with full schema/semantic/reference/graph/checksum/path/resource validation using the pinned MIT crate
+- [ ] 19.9 Add gated/private Tier 1 sharing with full schema/semantic/reference/graph/checksum/path/resource validation using the pinned MIT crate, forbidding `theme:` includes and custom theme/map/media members
 - [ ] 19.10 Add pack listing metadata for aggregate identity, versions, checksum, license, attribution, tags, and immutable object generation
 - [ ] 19.11 Add safe pack downloads through the cookie-less origin with fixed content type, `nosniff`, attachment disposition, generated filename, and short-lived single-object URLs for private content
 - [ ] 19.12 Add likes, comments, and sort/browse-by-likes

@@ -32,7 +32,7 @@ Lock MVP scope, non-goals, and completion criteria before code starts.
 
 ### Phase 01 - Repo Bootstrap
 
-Create all five locked Rust workspace members, pinned toolchain/lockfile, startup wiring, logging, legal baseline, native target compile checks, CI, and the `les-perissables-stories` repo needed by Phase 04.
+Create all five locked Rust workspace members with virtual-workspace resolver `3`, pinned toolchain/lockfile, startup wiring, logging, legal baseline, native target compile checks, CI, and the `les-perissables-stories` repo needed by Phase 04. Pin bundled SQLite and complete early feasibility gates for the actual persistence volume, supported-OS sandbox controls, Steam benchmark accounts/source IPs, Windows signing, and reproducible native dependencies before later phases depend on them.
 
 ### Phase 02 - Render Loop And Scene Skeleton
 
@@ -108,7 +108,7 @@ Build the `storycheck` CLI and cross-file pack checks for story creators in the 
 
 ### Phase 16 - Save And Resume
 
-Persist runs server-side with versioned session snapshots and compatibility checks so restarts and deploys do not destroy them.
+Persist runs server-side through the dedicated SQLite owner with versioned session snapshots, transactional commit-before-publish, compatibility checks, bounded checkpoints, and crash recovery so restarts and deploys do not destroy acknowledged state.
 
 ### Phase 17 - QA, Balance, Performance
 
@@ -148,6 +148,8 @@ Because the hub hosts user-generated content (shared packs, likes, comments), mo
 - `Packaging`: `raylib-rs`, native `raylib` dependencies, and cross-platform release builds are likely to cause more friction than the core game logic.
 - `Multiplayer sync`: Story state, combat state, reconnect flow, and deterministic-looking client behavior can become subtle quickly once multiple players act under latency.
 - `Creator tooling`: the data-driven model is a strength, but it only pays off if validation and authoring tools arrive early enough.
+- `Persistence volume`: SQLite is intentionally chosen over a custom storage engine, but its locking, full-synchronous durability, checkpoint latency, and deployment behavior must pass the actual Railway-volume gate in Phase 01; failure triggers a managed-database contract decision before gameplay work proceeds.
+- `Sandboxing`: the supported Linux and Windows confinement profiles depend on OS primitives that must be proven on the exact release baselines before hostile pack parsing is implemented.
 
 ## Tracking Note
 

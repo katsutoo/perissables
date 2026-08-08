@@ -95,7 +95,7 @@ Example theme manifest:
 
 Story metadata chooses a `theme_id`; the selected theme supplies its sole `ui_variant`, which resolves to visual skin tokens. The empty `nodes`/`encounters`/`triggers` arrays above keep the metadata example short and therefore are not a valid runnable story; complete required structures and bounds are normative in `docs/mvp-contract.md`.
 
-Example pack manifest:
+Example aggregate pack manifest (built-in or future attested Tier 2 shape, not a community Tier 1 manifest because it includes a theme document):
 
 ```json
 {
@@ -151,7 +151,7 @@ Creators author with the assets the game already ships:
 - New characters: new stat lines and spell loadouts drawn from existing spells, using existing sprites.
 - Existing themes only: pick from the shipped themes (supermarket, garden, storage_room).
 
-No new asset files are added, so every pack looks and sounds on-brand. Tier 1 still requires schema, semantic/reference, graph, checksum, path, and resource-limit validation because references to shipped maps, spells, themes, and nodes can be invalid or hostile.
+A community Tier 1 manifest may list only story and character documents. `theme:` includes, `themes/*.json`, custom maps/tilesets, images, audio, and every other custom member are forbidden; a new theme manifest is Tier 2 even when all of its asset references are built in. Built-in release packs are trusted project artifacts outside this community-import classification. No new asset files are added, so every Tier 1 pack looks and sounds on-brand. Tier 1 still requires schema, semantic/reference, graph, checksum, path, and resource-limit validation because references to shipped maps, spells, themes, and nodes can be invalid or hostile.
 
 ### Tier 2 - Original Assets (later)
 
@@ -194,7 +194,7 @@ Multiplayer sessions require one matching aggregate compatibility tuple across t
 
 ## Untrusted Input Rule
 
-Community packs are hostile input until validated. Pack loading and `storycheck` must enforce the locked size/path/count limits, reject path traversal and symlinks, parse TMX/XML with external entities and external resources disabled, and keep parser fuzz targets for JSON/TMX boundary cases.
+Community packs are hostile input until validated. Pack loading and `storycheck` must enforce the locked size/path/count limits, reject path traversal and symlinks, parse TMX/XML with external entities and external resources disabled, and keep parser fuzz targets for JSON/TMX boundary cases. Release validation runs only inside the exact fail-closed Linux Landlock/seccomp or Windows AppContainer/Job Object worker profile in `docs/mvp-contract.md`; an unavailable required primitive makes validation unavailable rather than weakening isolation.
 
 ## Authoring Principles
 

@@ -1,58 +1,109 @@
 # Test Strategy
 
-Status: Normative verification policy
+Status: Normative automated-test policy
 Owner: Project team
-Updated: 2026-08-09
+Updated: 2026-08-11
 
-Authority: automated-test methodology and evidence rules are normative here; tested product/protocol values derive from the named locked sections of `docs/mvp-contract.md`.
+Product and protocol behavior comes from `docs/mvp-contract.md`. This document
+defines how automated tests earn confidence without becoming a second
+implementation or a paperwork system.
 
-## Purpose
+## Principles
 
-Tests protect observable behavior and locked invariants. They do not replace QA, security review, or benchmarks. Every behavior is tested in the phase that introduces it; Phase 17 runs the resulting suite rather than adding overdue regression coverage.
+- Test observable behavior through public interfaces.
+- One test protects one behavior; table cases may cover several inputs of that
+  same behavior.
+- Assert concrete outputs and negative space. A rejected action must not mutate
+  state, consume a turn, spend resources, or emit gameplay events.
+- Inject time, RNG state, IDs, transport schedules, storage failures, and
+  identity-provider responses.
+- No sleeps for synchronization, wall-clock dependence, shared mutable fixtures,
+  order dependence, or retry-until-green.
+- Use real deterministic collaborators when cheap. Substitute only the boundary
+  that is unsafe, slow, nondeterministic, or external.
 
-## Test Rules
+## Fail-First Evidence
 
-- Test public interfaces and exact state/event/error contracts, not private implementation details.
-- Every new regression/behavior test must be observed failing for the intended reason before the implementation or fix is accepted. Preserve the pre-fix commit/tree identifier, exact command, test name, and expected failure signature in the phase evidence; then record the passing run against the implementation. For new code developed test-first, the failing test-only commit supplies this evidence. Pure refactors that add no behavior test state why this rule is not applicable.
-- Use visible arrange-act-assert structure. One test protects one behavior; table cases may cover multiple values of that behavior.
-- Assert concrete outputs and negative space: rejected input must not mutate gameplay state, consume a turn, or emit a gameplay event. An authenticated expected `input_seq` still advances replay metadata and, after Phase 16, commits that metadata/outcome in the session's SQLite post-state as required by the protocol contract.
-- Operational-error tests assert the stable error kind and durable side effects, not merely that an error occurred.
-- No sleeps, wall-clock dependence, random seeds from the environment, shared mutable fixtures, order dependence, or retry-until-green behavior.
-- Inject clocks, logical ticks, RNG state, IDs, transport schedules, storage faults, and external-service responses.
-- An unexplained intermittent failure is a failing suite. Preserve its first evidence and report the phase `INCONCLUSIVE` until resolved.
+Every new test is observed failing for the intended reason before acceptance.
+
+- Regression fixes preserve the failing test name, command, and failure
+  signature in the issue or change record.
+- Critical protocol, persistence, security, and migration invariants preserve
+  equivalent red/green evidence.
+- Routine test-first feature work does not require a permanent test-only commit,
+  tree identifier, or standalone evidence bundle.
+- Pure refactors state why no new behavior test is needed.
 
 ## Layers
 
-| Layer | Protects | Required examples |
-| --- | --- | --- |
-| Unit/property | Pure rules and bounded arithmetic | All dice values, limits, turn ordering, migrations, path grammar |
-| Schema/conformance | Shared byte-level behavior | Valid/invalid documents, RFC 8785 vectors, checksum corpus, portable paths |
-| State-machine transcript | Authoritative transitions | Story branches, combat actions, death/wipe, reset, stable revisions/events |
-| Protocol contract | Wire compatibility and rejection | Every payload/direction, versions, sequence boundaries, close/error behavior |
-| Multi-client integration | Convergence and authority | Scripted 2/3/4 clients, simultaneous joins, leave/re-admit, stale/replayed input, reconnect/token handoff |
-| Persistence integration | Crash-safe continuation | Current and immediately previous positive save migration when that previous version exists, database-schema rollback compatibility, corrupt/future/oversized rows, SQLite begin/write/commit/checkpoint failures, disk-full and crash recovery |
-| Release-artifact smoke | Shipped behavior | Startup, full run, hosted join/rejoin/restore on Linux and Windows |
+| Layer | Protects |
+| --- | --- |
+| Unit/property | Dice, combat, story rules, bounds, canonicalization, migrations |
+| Schema/conformance | Shared accepted/rejected JSON, TMX, ZIP, paths, and bytes |
+| State-machine transcript | Authoritative revisions, events, rejection, reset |
+| Protocol contract | DTOs, directions, versions, sequences, projections, errors |
+| Multi-client integration | 2/3/4-client convergence, reconnect, replay, capacity |
+| Persistence integration | The selected store, commit boundary, crash, migration, corruption |
+| Release smoke | Shipped startup and critical user journeys on supported OSes |
 
-## Mandatory Boundaries
+Release smoke is automated end-to-end coverage only when it launches the shipped
+entrypoint. Internal server/component tests remain integration tests.
 
-- Test zero, one, typical, limit minus one, limit, and limit plus one for every count, size, queue, rate, timeout, index, and version boundary.
-- Exhaustively test the d100 resolver for `0..=100`; test RNG v1 with official ChaCha20 known-answer vectors, rejection-threshold words, serialized resume at every word index, transaction rollback, and fixed expected outputs, never probabilistic frequency assertions.
-- Inject separate fake monotonic and Unix wall clocks. Use monotonic time for token buckets, heartbeat, turn/vote/summary deadlines, idle timeout, SQLite group/checkpoint scheduling, and retry delays. Test absolute session/token expiry across restart downtime, `1s` wall-clock rollback tolerance, rollback beyond `1s` fail-closed behavior, and forward jumps. At each gameplay deadline, test owner-mailbox dequeue strictly before, exactly at, and strictly after the boundary; frame-arrival timestamps must not backdate an input.
-- Run protocol tests with deterministic fragmentation, duplicate, stale, gap, reconnect, and slow-writer schedules. Persist the seed and schedule for every failure.
-- Maintain an analytical worst-case encoded-size proof for every projection DTO and event/output bundle from the locked field/count/string bounds. Back it with boundary-complete generated-state property tests plus explicit maximum lobby/world/story/combat/summary fixtures. Assert that `ClientView.party` includes `self`, contains every occupied seat exactly once, and is lexically sorted by `player_id`. Differential projections for two recipients assert that token digests, RNG state, other players' inventories/votes, hidden triggers, and server-only fields never serialize. Tests sample the state space; the proof, type/validator bounds, and maximum fixtures establish the universal cap claim.
-- Model the per-player unresolved-input ledger and unified writer queue with deterministic schedules covering zero through limit-plus-one entries, continuous supersession before/after discrete input, delayed ticks, mailbox/control-slot saturation, leave as a terminal input, persistence rollback, and reconnect. On injected SQLite begin/write/commit failure, assert every session in the failed group retains its prior row and in-memory state, every affected unresolved suffix is discarded, each admission frontier resets to its lowest discarded sequence, byte-identical retry from that frontier succeeds, and no higher input remains admitted. Also assert globally ascending results, no sequence consumption on `busy`, at most eight results per player/batch, and total queued bytes never above the contract cap.
+## Selecting Cases
 
-## Pack Fuzzing
+Use boundary analysis, not mechanical case multiplication.
 
-- Fuzz JSON, ZIP, path, checksum, image-header, audio-header, and TMX/XML boundaries in an isolated local process with no network access.
-- PR smoke target: `60s` per parser family, `512 MiB` RSS ceiling, `1s` per-input timeout.
-- Scheduled target: at least `30 minutes` per parser family using retained corpora.
-- Required oracle: no panic, hang, external fetch, traversal, unbounded allocation, cleanup leak, inconsistent checksum, or acceptance beyond a locked limit. On both supported OS baselines, negative sandbox tests attempt socket creation, forbidden file opens, child-process creation, handle/descriptor discovery, memory/CPU/file-limit overflow, and process-tree escape; every attempt must fail closed and leave no descendant or residue.
-- Preserve minimized reproducers and their exact toolchain/seed. Never skip a discovered input to restore green CI.
+- Cover empty/zero, one, a representative value, the meaningful limit, just
+  beyond the limit, malformed input, and the credible operational error where
+  those cases can change behavior.
+- Do not generate limit-minus-one/limit/limit-plus-one cases for every field when
+  a shared validator or property states the same invariant once.
+- Use exhaustive cases where the state space is deliberately small, such as all
+  d100 results.
+- Use property tests for broad invariants such as serialization round trips,
+  projection secrecy, queue accounting, canonical checksums, and no mutation on
+  rejection.
+- Keep fixtures minimal. Production-sized fixtures belong only where size or
+  concurrency is the behavior under test.
+
+## Required High-Risk Coverage
+
+- Authoritative transcripts cover one legal and one illegal action at every
+  gameplay phase, stable ordering, death/wipe, and three-run reset.
+- Protocol tests cover fragmentation, malformed DTOs, wrong direction/version,
+  stale/duplicate/gap sequences, recipient-specific projections, queue refusal,
+  reconnect handoff, and slow writers.
+- Identity tests cover wrong app/identity/token/generation, dropped handoff
+  responses, takeover, expiry, and absence of the local adapter in release
+  features.
+- Content tests cover traversal, aliases, duplicate keys, decompression/resource
+  limits, disabled XML external access, graph errors, checksum stability, and
+  fail-closed sandbox behavior.
+- Persistence tests are defined after Phase 10 and run against the real selected
+  adapter. Internal begin/write/commit/checkpoint or equivalent fault injection,
+  disk/full-space behavior, migration, crash, and corruption belong here rather
+  than in manual QA.
+
+## Fuzzing
+
+Fuzz parsers, canonicalization, protocol decoding, and state-machine boundaries
+in bounded isolated processes.
+
+- Keep targets narrow and free of external I/O.
+- Bound input size, time, memory, recursion, operations, and concurrency.
+- Preserve/minimize failures and promote useful cases to deterministic
+  regressions.
+- A panic, hang, escape, external fetch, unbounded allocation, or cleanup leak
+  is a failure.
 
 ## CI And Evidence
 
-- Run the pinned commands from `docs/mvp-contract.md` on a clean checkout with committed `Cargo.lock`.
-- Run tests in parallel and repeat concurrency/chaos suites under at least three recorded seeds before phase completion.
-- If features become mutually exclusive, replace `--all-features` with an explicit supported matrix in CI and this document.
-- A phase-completion checkbox links the CI run, relevant test names, fixture/conformance version, red/green evidence required above, and any manual evidence. Coverage percentage is informational and never substitutes for missing behavior.
+- Run the pinned commands from `docs/mvp-contract.md` on a clean checkout.
+- Run tests in parallel; repeat only concurrency/chaos suites under recorded
+  deterministic seeds.
+- Preserve the first intermittent failure. The suite remains failing or
+  `INCONCLUSIVE` until the cause is understood.
+- Coverage percentage is informational. Missing behavior is not excused by a
+  high number.
+- Phase evidence links CI, important test names, fixture/schema versions, and
+  any manual or environment-specific result.

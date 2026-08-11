@@ -9,16 +9,18 @@ in `docs/mvp-contract.md`.
 
 ## Documentation
 
-Start with `docs/README.md` for the documentation map and reading order. Locked
-implementation decisions live in `docs/mvp-contract.md`.
+Start with [the documentation index](docs/README.md) for the reading order.
+Product and compatibility requirements live in
+[the MVP contract](docs/mvp-contract.md); measured implementation decisions are
+locked only after their named evidence gate.
 
 ## License
 
 This repository is proprietary and distributed under an
 All Rights Reserved license.
 
-- Full license terms: `LICENSE`
-- Copyright notice: `COPYRIGHT`
+- Full license terms: [LICENSE](LICENSE)
+- Copyright notice: [COPYRIGHT](COPYRIGHT)
 
 No permission is granted to copy, modify, redistribute, or reuse this codebase
 or bundled assets without prior written permission from the copyright owner.

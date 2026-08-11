@@ -1,0 +1,26 @@
+# Rust build output
+/target/
+**/*.rs.bk
+*.profraw
+*.profdata
+
+# Generated verification output
+/artifacts/
+/coverage/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+mise.local.toml
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.swp
+*~

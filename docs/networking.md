@@ -1,86 +1,109 @@
 # Networking
 
-Authority: exact message, lifecycle, sequence, rate, queue, timeout, and identity behavior derives from "Locked Protocol And Limits" in `docs/mvp-contract.md`. This document is explanatory.
+Authority: protocol, identity, lifecycle, and safety requirements live in
+`docs/mvp-contract.md`. Exact v1 DTOs and byte fixtures are frozen with the
+Phase 02 implementation.
 
-## Multiplayer Model
+## Model
 
-The game uses an authoritative server. Clients never decide movement success, combat outcomes, dice results, or story progression. They send intent; the server validates it, advances shared state, and publishes the result.
-
-That model fits the project well because it keeps co-op sync readable, limits cheating, and lets story logic stay in one place.
-
-## High-Level Flow
-
-1. Player creates/joins a lobby, rejoins a reserved seat, or explicitly leaves a lobby.
-2. Client sends sequenced `input` actions for lobby readiness and gameplay.
-3. Server validates the request against current state.
-4. Server updates the canonical session state.
-5. Server emits snapshots and events to all clients.
-6. Clients render the new world/combat/dialog state and play local feedback.
-
-## Why WebSockets
-
-- Good fit for a small real-time co-op game with frequent but lightweight state updates.
-- Simple enough for MVP implementation and debugging.
-- Works cleanly with an `axum`/`tokio` server and reverse-proxy TLS termination.
-
-## Message Shape
-
-All gameplay traffic follows one shared envelope shape, with message-specific payloads inside it. Exact field requirements, allowed message types, sequence rules, and size/rate limits are locked in `docs/mvp-contract.md`.
-
-For design purposes, the important rule is:
-
-- envelope stays stable
-- payload varies by message type
-- unknown or stale messages are rejected
-
-For implementation, keep directions explicit. `join` carries create/join intent, the target lobby when joining, Steam proof, and the aggregate compatibility tuple. `join_response` issues server-generated player/session IDs plus the initial rejoin token. `rejoin` presents fresh Steam proof plus a current or pending-handoff token; the server durably returns the candidate token in `rejoin_response`, sends `resync_state`, and promotes rotation only after `resync_ack`. Authenticated `leave` is a terminal lobby input that releases the seat after commit. Exact payloads remain in "Locked Protocol And Limits" in `docs/mvp-contract.md`.
-
-## Production Session Discovery
-
-Steam lobbies and invites are discovery UX, not endpoint or gameplay authority. Lobby metadata carries the target `session_id`, independent protocol/content/rules versions, and aggregate pack identity/checksum. New seats may join only the authoritative `Lobby`; reserved seats use rejoin in any non-ended phase. The WebSocket origin comes only from the trusted environment allowlist, so manipulated lobby metadata cannot redirect Steam proof. The server validates tickets, computes its own compatibility values, issues identifiers/tokens, and owns all state transitions.
-
-## Authority Boundaries
+The server is authoritative from the first playable slice. Clients send intent;
+the server validates identity and current state, advances headless rules, and
+publishes recipient-specific views, events, and results.
 
 The server owns:
 
-- session and lobby lifecycle
-- map positions and collision validity
-- event triggers and story progression
-- dice rolls and check resolution
-- combat turns, action validity, and outcomes
-- reconnect and state resync decisions
+- lobby/session lifecycle and ownership;
+- positions, collision, interactions, and story progression;
+- dice, combat, inventory, death, and run completion;
+- input ordering, revisions, event IDs, deadlines, and reconnect; and
+- every decision that can affect another player.
 
-The client owns:
+The client owns rendering, input collection, local UI/presentation state, and
+audio playback after an authoritative event.
 
-- rendering
-- local input collection
-- local audio playback after receiving approved gameplay events
-- temporary presentation state that does not affect gameplay authority
+## Early Vertical Slice
 
-## Security Posture For MVP
+Phase 02 proves the complete path before broad gameplay:
 
-- Validate every inbound message shape before acting on it.
-- Reject unknown message types and impossible state transitions.
-- Enforce frame size limits and per-client rate limits.
-- Treat control messages separately from gameplay input, enforce pre-auth handshake/global bounds, and throttle failed `join`/`rejoin` attempts before expensive validation.
-- Use per-connection transport sequences for ordering and persisted per-player input sequences for replay protection across reconnects.
-- Use heartbeat and timeout rules to detect dead connections.
-- Bound the unresolved-input ledger, reserved session-mailbox partitions, and one unified byte-accounted writer queue; coalesce only replaceable state/control and disconnect slow consumers instead of growing memory.
-- Keep gameplay-critical logic off the client.
+```text
+client intent
+    -> WebSocket DTO
+    -> session owner
+    -> headless game_core
+    -> revision + event/result
+    -> recipient view
+    -> both clients converge
+```
 
-## Reconnect And Sync
+The slice covers lobby create/join, one interaction, one dice check, one legal
+combat action, one rejected action, and summary. Later behavior extends this
+path; it is not migrated from client authority.
 
-Reconnect matters because short co-op runs feel bad if one temporary disconnect destroys the session.
+## Transport
 
-The plan is:
+WebSockets fit the small co-op update model and the `axum`/`tokio` server.
+Production uses WSS through trusted environment endpoints. Steam lobby metadata
+contains discovery/compatibility data, never arbitrary endpoints or authority.
 
-- issue a CSPRNG-backed rejoin token alongside server-generated session/player IDs during join
-- keep reconnect tokens opaque, server-generated, and out of Steam lobby metadata
-- commit and return a pending rotation token, then require resync acknowledgement before promoting it or accepting new input
-- send a bounded player-specific authoritative resync and require acknowledgement before returning a player to active play
-- reject out-of-order or replayed input after reconnect
-- after Phase 16, commit versioned session state through the dedicated SQLite persistence owner so a Release-ready restart or deploy looks like an ordinary disconnect/reconnect; before Phase 16, run loss remains explicit pre-release behavior
+JSON v1 prioritizes debuggability. The envelope carries type, protocol version,
+session/player IDs, per-direction transport sequence, and a typed payload.
+Gameplay inputs also carry persisted per-player order and a based-on revision.
 
-## Audio Rule
+Protocol rules:
 
-The server does not stream audio. It emits gameplay events, and each client plays matching local sounds. That keeps bandwidth lower and avoids making voice/audio transport part of the gameplay protocol.
+- DTO direction and unknown-field behavior are explicit.
+- IDs are opaque and server-generated.
+- Every admitted expected input receives exactly one result.
+- Recipient projections expose no secret or other-player private state.
+- State is coalescible; semantic events/results are not silently discarded.
+- Malformed, unauthorized, stale, duplicate, gap, rate, queue, and service
+  failures have stable bounded behavior.
+- Every message, ledger, mailbox, writer queue, timeout, retry, and fan-out is
+  bounded.
+
+Internal queue capacities are implementation budgets justified by tests and
+measurements. They are not copied into protocol documentation unless a client
+must know them.
+
+## Identity
+
+Production join/rejoin validates Steam proof for the expected app and ownership.
+The server issues all session/player IDs and opaque rejoin tokens.
+
+- Raw tickets/tokens are never logged or persisted.
+- Tokens are identity/session/player/generation-bound and digest-stored.
+- One player has at most one authoritative connection.
+- Rejoin rotates through an acknowledged handoff.
+- The client acknowledges recipient-specific resync before new gameplay input.
+- Stale takeover-close notifications cannot disconnect the replacement.
+
+A local identity adapter supports deterministic development and tests before
+Steam staging is available. It cannot compile into release features/packages.
+
+## Lifecycle And Recovery
+
+New seats join only a lobby; reserved seats may rejoin a non-ended session.
+Disconnect preserves a seat through bounded grace. Explicit lobby leave or
+expiry releases it.
+
+Before Phase 11, process restart may lose pre-release runs. Phase 10 selects the
+durability/acknowledgement design from measurements; Phase 11 implements it.
+Networking depends only on the persistence adapter's documented commit result,
+not on SQLite- or Postgres-specific behavior.
+
+## Slow And Failed Peers
+
+State updates are latest-value coalesced. Required semantic events/results use
+bounded ordered bundles. A client that cannot drain its bounded writer budget is
+disconnected without allowing unbounded memory growth or stalling healthy
+sessions.
+
+Heartbeats detect dead connections. Rate limits and pre-auth concurrency bounds
+protect expensive identity validation. Trusted proxy configuration, not
+user-supplied forwarding headers, determines source attribution.
+
+## Audio
+
+The server never streams game audio. It emits semantic cue events, and each
+client plays its matching local asset. This keeps audio out of transport
+authority and bandwidth budgets.

@@ -1,156 +1,172 @@
 # Roadmap
 
-## Delivery Milestones
+## Planning Rule
 
-These are aggressive planning estimates for one developer with controlled scope and strict phase discipline. Add `30-50%` buffer for calendar planning, especially around Steamworks, native packaging, multiplayer sync, and UGC moderation.
+This roadmap is an execution order, not a calendar promise. For one developer,
+the previous `4-8 month` release range remains an aspirational hypothesis until
+the Phase 02 authoritative slice, native target builds, Steam access, and Phase
+10 storage decision have produced evidence.
 
-Core-game estimates are cumulative from Phase 00. The separate community-hub estimate is additional after or alongside the core release.
+Re-estimate after each of those gates. A failed feasibility gate changes the
+plan before dependent implementation begins; it does not get hidden inside a
+later phase.
 
-| Milestone | Included phases | Result | Estimate basis |
-| --- | --- | --- | --- |
-| Vertical slice | 00-07 | One map, one story, checks, first combat slice | Cumulative `3-6 weeks` |
-| Playable MVP | 00-13 | Core multiplayer, three themes, stable lobby-to-run loop; reconnect hardening and durable run persistence are not complete yet | Cumulative `2-4 months` |
-| Release-ready | 00-18 | Reconnect robustness, creator tooling, QA, Steam-ready builds, hosted server | Cumulative `4-8 months` |
-| Community hub | 19-20 | Landing page, then accounts + pack sharing/likes/comments + moderation (separate repo) | Additional `3-8 weeks` |
+## Milestones
 
-## How To Use This Roadmap
-
-- Build in order. Each phase should leave the project in a playable, testable, or clearly reviewable state.
-- Do not pull later-phase work forward unless an earlier phase is blocked without it.
-- Keep exact MVP locks in `docs/mvp-contract.md`; use this file for sequencing and planning. Verification methods live in the dedicated test, QA, security, and benchmark plans.
-- Use `docs/progress-tracker.md` as the detailed checkbox board for completion tracking.
+| Milestone | Phases | Outcome |
+| --- | --- | --- |
+| Authoritative vertical slice | 00-02 | Two clients complete one tiny server-owned run |
+| Playable MVP | 00-09 | Complete repeatable 2-4 player game loop with built-in content |
+| Release-ready | 00-13 | Durable sessions, measured performance, Steam packages, and production operations |
+| Post-MVP | Separate backlog/repositories | Community hub, public UGC, Tier 2 custom assets, and other extensions |
 
 ## Phase Plan
 
-### Foundation (00-02)
-
-These phases establish scope, repo shape, and the first runnable client/server shell.
-
 ### Phase 00 - Scope Freeze
 
-Lock MVP scope, non-goals, and completion criteria before code starts.
+Define the player experience, product boundaries, authority model, and completion
+evidence. Phase 00 is documentation-only.
 
-### Phase 01 - Repo Bootstrap
+Exit: the current contract and documentation map agree, with no implementation
+detail labeled final before its evidence gate.
 
-Create all five locked Rust workspace members with virtual-workspace resolver `3`, pinned toolchain/lockfile, startup wiring, logging, legal baseline, native target compile checks, CI, and the `les-perissables-stories` repo needed by Phase 04. Pin bundled SQLite and complete early feasibility gates for the actual persistence volume, supported-OS sandbox controls, Steam benchmark accounts/source IPs, Windows signing, and reproducible native dependencies before later phases depend on them.
+### Phase 01 - Repository Bootstrap
 
-### Phase 02 - Render Loop And Scene Skeleton
+Create the five-member Rust workspace, pinned toolchain and lockfile, minimal
+client/server entrypoints, logging, CI, legal baseline, and local development
+tasks. Create the separate MIT `les-perissables-stories` repository and pin its
+relationship.
 
-Get a stable game window, basic scenes, input abstraction, and audio manager shell.
+Run only bootstrap-relevant feasibility checks:
 
-### Core Gameplay Slice (03-09)
+- Linux and Windows native dependencies can be acquired reproducibly.
+- Both targets compile minimal client/server shells.
+- CI can run the locked Rust checks.
 
-These phases build the first full single-run experience in order: move in the world, load stories, resolve checks, fight, select characters, and survive death states. Phases 05-07 may use one hardcoded debug character so the vertical slice can exercise checks and combat before Phase 08 adds the real data-driven roster; that debug path must not survive Phase 08.
+Steam account pools, distributed load-generator IPs, production signing, pack
+sandbox qualification, and storage selection are later gates owned by the phases
+that need them.
 
-### Phase 03 - Tilemap World Prototype
+### Phase 02 - Early Authoritative Vertical Slice
 
-Load one TMX map, walk it, collide with it, and follow the player camera.
+Build the first runnable product through the real server boundary:
 
-### Phase 04 - Story Schema v1
+- two local test identities create/join one lobby;
+- the server starts one tiny run;
+- one map interaction triggers one check;
+- one legal and one rejected combat action resolve;
+- both clients converge on the same summary.
 
-Implement the already-locked complete content schema v1, portable pack validation, conformance vectors, and canonical MIT creator examples before runtime behavior depends on them.
+Use real protocol DTOs, revisions, events, errors, and bounded queues from the
+start. Restart durability, Steam authentication, polished rendering, and broad
+content are not required yet.
 
-### Phase 05 - Story Runtime
+### Phase 03 - World Runtime
 
-Execute branching story progression from data only.
+Implement fixed-timestep client presentation, server-owned cardinal movement,
+TMX loading/collision, camera behavior, interactions, and the minimal audio
+event path. Extend the Phase 02 transcript rather than creating a separate
+single-player rules path.
 
-### Phase 06 - Dice And Checks
+### Phase 04 - Story Schema And Runtime
 
-Implement visible d100 checks with correct critical handling and clear feedback.
+Publish schema v1 from `les-perissables-stories`, implement strict validation
+and a declarative story state machine, and add branching, choices, checks,
+effects, encounters, and return/end transitions. Freeze exact parser/resource
+ceilings with the validator corpus, not before it exists.
 
-### Phase 07 - Combat Core
+### Phase 05 - Combat, Characters, Death, And Loot
 
-Ship the first playable turn-based combat loop tied to story encounters.
+Complete the preset roster, dice/combat rules, items, death, corpse loot,
+victory/wipe behavior, and deterministic authoritative transcripts. Remove every
+temporary debug character and action before exit.
 
-### Phase 08 - Character Presets
+### Phase 06 - Complete Run Loop And Presentation
 
-Add the premade roster, validation, and character-select flow.
+Finish story selection, ready/start, summary/reset, three built-in themes,
+behavior-neutral UI variants, keyboard-only operation, settings, fallback
+assets, music/SFX/voice channels, and three-run reset coverage.
 
-### Phase 09 - Death And Loot
+### Phase 07 - Multiplayer And Identity Hardening
 
-Support lethal runs, corpse looting, and continue-until-wipe flow.
+Add Steam ticket validation for isolated staging, identity-bound rejoin tokens,
+single-connection takeover, acknowledged resync, replay protection, heartbeat,
+rate limits, slow-client handling, and deterministic transport-chaos tests.
 
-### Replayability And Presentation (10-12)
+Local test identity remains available only to tests and non-release development
+builds and is proven absent from production packages.
 
-These phases make the shared engine feel broader without changing its core rules.
+### Phase 08 - Creator Tooling And Tier 1 Packs
 
-### Phase 10 - Theme Packs
+Build `storycheck`, canonical checksum/path validation, the creator tutorial,
+safe local import, and single-player creator testing for reuse-only Tier 1 packs.
+Hosted multiplayer remains built-in-only. Custom maps/media and public UGC are
+post-MVP.
 
-Switch environment presentation through data-driven theme loading.
+### Phase 09 - Playable MVP Stabilization
 
-### Phase 11 - UI Variants
+Run deterministic 2-, 3-, and 4-client scenarios, repeated run loops, reconnect
+coverage, supported-resolution presentation checks, and risk-based regression
+tests. Resolve blocker/critical defects before declaring Playable MVP.
 
-Support multiple built-in UI skins while keeping behavior identical; schema v1 themes select them but cannot define new skin-token documents.
+### Phase 10 - Persistence Spike And Decision
 
-### Phase 12 - Lobby And Story Rotation
+Measure the actual state and write workload on production-shaped Railway
+infrastructure. Compare bundled SQLite with managed PostgreSQL when appropriate,
+and compare snapshot/checkpoint strategies and durability boundaries.
 
-Complete the repeatable lobby -> run -> summary -> lobby loop.
+Publish one decision record containing:
 
-### Multiplayer Authority And Recovery (13-14)
+- selected store and operational topology;
+- durable acknowledgement semantics;
+- schema/version/migration policy;
+- measured commit cadence and queue/storage budgets;
+- clean/crash recovery behavior;
+- backup and rollback approach; and
+- rejected alternatives with measured reasons.
 
-These phases move authority fully server-side, then harden sync and reconnect behavior.
+Only this decision gates durable-session implementation. It does not block
+Phases 02-09.
 
-### Phase 13 - Authoritative Multiplayer And Staging Identity
+### Phase 11 - Durable Sessions
 
-Move gameplay authority server-side using the already deterministic `game_core`; implement base transport/input sequences, revisions, event IDs, bounded ledgers/writers, and Steam ticket validation for isolated staging, then validate scripted 2-4 player convergence and all admission boundaries. Depot packaging and final lobby/invite UX remain in Phase 18, but Phase 17 must not depend on an authentication path that does not exist yet.
+Implement the Phase 10 decision behind the server persistence adapter. Persist
+only server-owned state, never raw bearer tokens or client-submitted saves.
+Exercise migration, storage failure, clean shutdown, crash recovery, corruption,
+and rollback compatibility with real integration tests.
 
-### Phase 14 - Reconnect And Sync Robustness
+### Phase 12 - Release QA, Balance, And Performance
 
-Harden the Phase 13 sequence/revision foundation across disconnects with token handoff, takeover, resync acknowledgement, heartbeat, replay rejection, and deterministic transport-chaos coverage.
+Provision production-equivalent staging. Run consented playtests, the release
+QA matrix, calibrated client measurements, server capacity/load experiments,
+recovery workloads, and profiling of measured bottlenecks. Freeze release
+budgets only after the reference environment and noise floor are recorded.
 
-### Tooling, Persistence, And Quality (15-17)
+### Phase 13 - Steam Packaging And Production
 
-These phases make the project easier to extend, safer to resume, and more stable to ship.
+Create reproducible signed Linux/Windows packages, complete Steam
+lobbies/invites and depot layout, deploy the production server, drill rollback,
+and rerun release QA plus performance gates against the exact final digests.
+Complete end-user terms, third-party notices, and asset provenance.
 
-### Phase 15 - Creator Tooling
+## Post-MVP Boundary
 
-Build the `storycheck` CLI and cross-file pack checks for story creators in the MIT `les-perissables-stories` repo, on top of the schema/validation crate already built in Phase 04.
+The community hub, accounts, likes/comments, public uploads, moderation,
+publication signing, custom maps/media, and Tier 2 content belong to a separate
+post-MVP plan and repository. This game repository retains only the game-facing
+pack compatibility interface once that work begins.
 
-### Phase 16 - Save And Resume
+## Definition Of Done
 
-Persist runs server-side through the dedicated SQLite owner with versioned session snapshots, transactional commit-before-publish, compatibility checks, bounded checkpoints, and crash recovery so restarts and deploys do not destroy acknowledged state.
+For every implementation phase:
 
-### Phase 17 - QA, Balance, Performance
-
-Provision production-equivalent staging, execute the Phase 17 pre-release QA matrix and benchmark plans against production-profile core artifacts/client candidates, and profile only measured hot paths. Regression tests already belong to the phases introducing behavior; final Steam/package QA and the complete final-artifact benchmark rerun follow in Phase 18.
-
-### Release And Community Follow-Through (18-20)
-
-These phases cover shipping, then the community hub (a committed follow-on built soon after the core game is ready).
-
-### Phase 18 - Steam Packaging And Production Server
-
-Prepare and sign reproducible release builds, finalize Steam lobbies/invites and depot integration on top of the Phase 13 identity boundary, create and drill the locked rollback manifest, deploy the production game server, and rerun the complete QA plus benchmark release matrix against the exact final candidate digests. Production binaries are distributed through Steam rather than public release pages.
-
-### Phase 19 - Community Hub Foundation
-
-Create the separate proprietary `les-perissables-hub` as a Rust `axum` + `maud` + `htmx` app on Railway with Railway Postgres via `sqlx`. Stage 1 is a content-only landing page. Phase 19 may implement accounts and Tier 1 UGC only behind a private/admin gate, with privacy/deletion terms, baseline abuse limits, complete validation, and immutable private storage already active. The public Stage 2 launch remains blocked on Phase 20 moderation and trust gates. Validation uses the pinned MIT crate from `les-perissables-stories`; files use the immutable R2 publication flow locked in the contract.
-
-### Phase 20 - Moderation And Trust
-
-Because the hub hosts user-generated content (shared packs, likes, comments), moderation and privacy are the public Stage 2 launch gate, not a later add-on: publish a moderation policy and privacy policy, add report/flag plus admin delete/ban actions, anti-spam/upload limits, and account/content deletion. Tier 2 (original-asset) packs remain disabled until asset/format validation plus publication attestation, root-signed key-set, revocation delivery, rotation, and client verification are also complete.
-
-## Definition Of Done For Every Phase
-
-- Phase 00 is a documentation-only scope gate: CI/build/artifact clauses below are not applicable until Phase 01 creates the workspace. Every later phase satisfies every applicable clause and records any explicit non-applicability.
-- Phase-specific acceptance scenarios and expected state/events are written before implementation and linked from the tracker.
-- Behavior introduced by the phase has deterministic public-interface tests for happy, boundary, invalid, and operational-error paths; each new test is observed failing for the intended reason before the fix.
-- The pinned CI checks pass on a clean checkout, and supported feature/target combinations compile.
-- Required manual QA uses the exact release artifact and records environment, steps, expected/actual results, side effects, cleanup, and evidence under `docs/qa-plan.md`.
-- Security-sensitive boundaries have threat-model coverage and bounded negative tests under `docs/security-model.md`; no discovered credential is used.
-- Performance-sensitive changes preserve correctness and run the smallest applicable release-mode measurement under `docs/benchmark-plan.md`; raw output and environment metadata are retained.
-- Operational errors are explicitly propagated and stable externally; programmer invariants are deliberate; required structured logs contain no secrets or personal data.
-- No blocker/critical defect or unexplained intermittent test remains. The phase checkbox links its demo/test evidence and the next phase's entry decisions are resolved.
-
-## Known Risks
-
-- `Steamworks`: Steam integration is conceptually simple on paper but often messy in practice, especially around auth, lobby behavior, native SDK setup, and release testing.
-- `Packaging`: `raylib-rs`, native `raylib` dependencies, and cross-platform release builds are likely to cause more friction than the core game logic.
-- `Multiplayer sync`: Story state, combat state, reconnect flow, and deterministic-looking client behavior can become subtle quickly once multiple players act under latency.
-- `Creator tooling`: the data-driven model is a strength, but it only pays off if validation and authoring tools arrive early enough.
-- `Persistence volume`: SQLite is intentionally chosen over a custom storage engine, but its locking, full-synchronous durability, checkpoint latency, and deployment behavior must pass the actual Railway-volume gate in Phase 01; failure triggers a managed-database contract decision before gameplay work proceeds.
-- `Sandboxing`: the supported Linux and Windows confinement profiles depend on OS primitives that must be proven on the exact release baselines before hostile pack parsing is implemented.
-
-## Tracking Note
-
-This document keeps the roadmap at the planning level. Use `docs/progress-tracker.md` as the built-in execution checklist, and move day-to-day implementation detail into issues or a project board if the tracker becomes too granular.
+- The acceptance behavior and failure oracle are clear before implementation.
+- New behavior has focused public-interface tests for meaningful valid,
+  boundary, and error paths.
+- CI passes on a clean checkout for supported features and targets.
+- Security-sensitive changes update the threat model and negative coverage.
+- Performance-sensitive choices use the smallest production-mode measurement
+  that can support the decision.
+- Manual QA uses the shipped entrypoint only when a user journey exists.
+- No blocker/critical defect or unexplained intermittent failure remains.
+- The tracker links evidence; active implementation detail lives in issues.

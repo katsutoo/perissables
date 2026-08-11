@@ -1,23 +1,48 @@
 # Content Packs
 
-Authority: exact schema, TMX, archive, attestation, checksum, tier, and asset behavior derives from "Locked Content Conventions" and "Locked Pack Compatibility And Checksums" in `docs/mvp-contract.md`. This document explains the creator model and examples.
+Authority: the game-facing content boundary comes from
+`docs/mvp-contract.md`. Exact schema fields, limits, canonical bytes, and
+positive/rejection fixtures are frozen in the versioned
+`les-perissables-stories` validator release.
 
-## Core Idea
+## Purpose
 
-The game engine is proprietary, but the story format is meant to be open enough that creators can build new adventures without touching engine code.
+Stories, preset characters, and presentation references are data so new
+adventures do not require engine changes. Engine-owned rules remain fixed.
 
-The runtime should be able to load:
+One session uses one aggregate pack containing at least one story and any
+permitted character/theme documents. Multiplayer negotiates one tuple:
 
-- story data
-- character preset data
-- theme/UI manifest data
-- pack metadata used for compatibility checks
+- pack ID;
+- semantic version;
+- canonical SHA-256 checksum;
+- content schema version; and
+- game-rules version.
 
-## Example Content Early
+Hosted MVP servers load built-in packs from their immutable release artifact.
+Clients cannot upload a pack, provide a URL, or make the server fetch one.
 
-The JSON snippets below are illustrative shape examples, not validator fixtures. Ellipses, placeholder checksums, and intentionally empty story arrays are not accepted by the strict schema; canonical valid examples will live in the versioned `les-perissables-stories` conformance corpus.
+## Data And Engine Boundary
 
-Example story metadata:
+Pack-controlled:
+
+- story nodes, choices, checks, encounters, dialogue, and flavor;
+- preset stat/spell/item composition within engine bounds;
+- references to permitted maps, themes, sprites, and audio.
+
+Engine-controlled:
+
+- authority, combat and dice behavior;
+- spell/item effect implementations;
+- movement, collision, timers, inventory, and voting rules;
+- UI behavior, controls, focus order, and built-in skin tokens; and
+- validation, compatibility, and resource enforcement.
+
+No pack executes code.
+
+## Illustrative Shape
+
+This is explanatory, not a validator fixture:
 
 ```json
 {
@@ -34,171 +59,96 @@ Example story metadata:
 }
 ```
 
-Example event/check node:
+The empty arrays make the snippet non-runnable. Complete accepted examples and
+their exact bytes belong to the versioned conformance corpus, so documentation
+cannot drift into a second schema.
 
-```json
-{
-  "id": "check_open_freezer",
-  "kind": "check",
-  "label": "Force open the frozen door",
-  "stat": "strength",
-  "effects": [],
-  "outcomes": {
-    "success": { "goto": "freezer_open", "effects": [] },
-    "failure": { "goto": "alarm_triggers", "effects": [] },
-    "critical_success": { "goto": "freezer_open_bonus", "effects": [] },
-    "critical_failure": { "goto": "shelf_collapses", "effects": [] }
-  }
-}
-```
+## MVP Creator Scope: Tier 1
 
-The exact critical-branch fallback behavior is normative in `docs/mvp-contract.md`; this example shows all four branches explicitly.
+Tier 1 is reuse-only:
 
-Example character preset:
+- new stories using shipped maps/themes;
+- new character stat/spell/item compositions using shipped behavior and
+  sprites; and
+- text/flavor within the schema.
 
-```json
-{
-  "content_schema_version": 1,
-  "id": "banana_rogue",
-  "name": "Banana Rogue",
-  "group": "fruit",
-  "stats": {
-    "strength": 18,
-    "agility": 62,
-    "wit": 40,
-    "charm": 27
-  },
-  "max_hp": 40,
-  "resource_max": 30,
-  "spells": ["peel_escape", "cheap_shot"],
-  "starting_items": [],
-  "sprite": "builtin:banana_rogue",
-  "voice_barks": {}
-}
-```
+A Tier 1 archive contains only its root manifest and listed story/character
+documents. It cannot contain theme documents, maps, tilesets, images, audio,
+scripts, or unlisted members.
 
-Example theme manifest:
+Tier 1 is available through safe local import and single-player creator testing.
+Hosted community multiplayer is not part of MVP.
 
-```json
-{
-  "content_schema_version": 1,
-  "theme_id": "storage_room",
-  "tileset": "builtin:storage_room_tileset",
-  "props": "builtin:storage_room_props",
-  "ambience_loop": "builtin:storage_room_hum",
-  "exploration_music": "builtin:storage_room_explore",
-  "combat_music": "builtin:storage_room_combat",
-  "combat_backdrop": "builtin:storage_room_battle",
-  "ui_variant": "cold_room"
-}
-```
+## Post-MVP: Tier 2 And Hub
 
-Story metadata chooses a `theme_id`; the selected theme supplies its sole `ui_variant`, which resolves to visual skin tokens. The empty `nodes`/`encounters`/`triggers` arrays above keep the metadata example short and therefore are not a valid runnable story; complete required structures and bounds are normative in `docs/mvp-contract.md`.
+Custom maps, themes, sprites, images, audio, public uploads, moderation,
+publication signing/revocation, and hosted community multiplayer are Tier 2
+post-MVP work.
 
-Example aggregate pack manifest (built-in or future attested Tier 2 shape, not a community Tier 1 manifest because it includes a theme document):
+Their trust, licensing, publication, and provisioning protocols are defined in
+the future hub plan/repository only when implementation begins. This repository
+will retain the final game-facing compatibility interface, not speculative hub
+internals.
 
-```json
-{
-  "content_schema_version": 1,
-  "pack_id": "cleanup-pack",
-  "version": "1.0.0",
-  "checksum": "sha256:...",
-  "game_rules_version": 1,
-  "license_expression": "MIT",
-  "component_licenses": {
-    "stories/cleanup_on_aisle_9.json": {
-      "license": "MIT",
-      "attribution": "Example Creator"
-    }
-  },
-  "includes": [
-    "story:cleanup_on_aisle_9",
-    "character:banana_rogue",
-    "theme:supermarket"
-  ]
-}
-```
+## Validation Ownership
 
-## Aggregate Pack Model
+The separate MIT `les-perissables-stories` repository owns:
 
-One MVP session uses one aggregate archive and one compatibility tuple. The archive requires at least one story and may contain any supported combination of the other content categories below; they are categories inside the aggregate pack, not independently negotiated multiplayer dependencies.
+- the `les-perissables-pack` Rust schema/validation crate;
+- the `storycheck` CLI;
+- canonical creator examples;
+- accepted/rejected conformance vectors;
+- checksum/path canonicalization; and
+- authoring/troubleshooting documentation.
 
-### Story Packs
+The proprietary game pins one released crate version and lockfile resolution.
+It does not copy the schema into a second implementation.
 
-Define maps, events, choices, checks, and encounters. Stories should be fully runnable through the shared engine without custom code paths.
+## Validation Requirements
 
-### Character Packs
+Community packs are hostile input. Before installation:
 
-Define premade food characters with stats, spell lists, names/groups, starting items, and asset references.
+- enforce compressed, expanded, file-count, path, JSON/XML depth, text,
+  collection, map, image, audio, and decoded-memory ceilings;
+- accept only a portable regular-file ZIP subset;
+- reject absolute/traversal/ambiguous paths, links, devices, nested/encrypted
+  archives, duplicate JSON keys, unknown fields, and unresolved references;
+- disable DTDs, external entities, XInclude, external URLs/files, and parser
+  resolution;
+- validate TMX semantics and story graph termination/reachability;
+- compute the canonical checksum from validated logical content; and
+- remove temporary output on every result.
 
-### Theme Packs
+Exact ceilings are frozen with schema v1 after typical, large, limit, and
+rejected fixtures exist. Released limits do not expand silently.
 
-Define environment-facing presentation: tileset, props, ambience loop, exploration music, combat music, combat backdrop, and UI variant references.
+Native/untrusted decode runs only in bounded killable workers under qualified
+Linux and Windows sandbox profiles with no network, broad filesystem, inherited
+secrets, or child-process escape. If a required release sandbox cannot be
+installed, validation is unavailable rather than weakened.
 
-### Pack Manifests
+## TMX And Asset Direction
 
-Define aggregate pack identity, version, content schema version, game-rules version, checksum, SPDX license expression, per-component licensing/attribution where needed, and included content references so the server and players can verify compatibility.
+MVP maps are finite orthogonal TMX maps with `16x16` tiles, explicit collision,
+event objects, validated in-pack or built-in references, and no scripts or
+external resolution. Precise allowed layers/objects and bounds belong to the
+schema corpus.
 
-## Creator Freedom Tiers
+Built-in presentation conventions:
 
-Creator-authored content rolls out in two tiers so the game can ship a consistent, low-moderation experience first and open up full customization once hub tooling exists.
+- four-direction `16x16` character frames;
+- Ogg Vorbis for ambience/music/voice;
+- signed 16-bit PCM WAV for short SFX; and
+- mono/stereo `48 kHz` audio.
 
-### Tier 1 - Reuse Only (first creator release)
+Presentation fallback applies only after content passed validation. It never
+changes gameplay authority, collision, controls, focus, timing, or events.
 
-Creators author with the assets the game already ships:
+## Licensing Boundary
 
-- New stories: branching, choices, checks, encounters, dialogue, flavor.
-- New characters: new stat lines and spell loadouts drawn from existing spells, using existing sprites.
-- Existing themes only: pick from the shipped themes (supermarket, garden, storage_room).
-
-A community Tier 1 manifest may list only story and character documents. `theme:` includes, `themes/*.json`, custom maps/tilesets, images, audio, and every other custom member are forbidden; a new theme manifest is Tier 2 even when all of its asset references are built in. Built-in release packs are trusted project artifacts outside this community-import classification. No new asset files are added, so every Tier 1 pack looks and sounds on-brand. Tier 1 still requires schema, semantic/reference, graph, checksum, path, and resource-limit validation because references to shipped maps, spells, themes, and nodes can be invalid or hostile.
-
-### Tier 2 - Original Assets (later)
-
-Creators may additionally ship their own presentation so a pack fully matches its own setting (for example a haunted mansion or a space station rather than a grocery store):
-
-- Original tilesets, maps, character sprites, music, ambience, SFX, and combat backdrops.
-- Original theme manifests that still select one shipped behavior-neutral UI variant; custom skin-token documents are outside schema v1.
-
-All original assets must conform to the locked conventions in `docs/mvp-contract.md` (16x16 tiles, sprite frame order/naming, TMX layer/object rules, Ogg Vorbis/PCM WAV decoder formats, channel/sample-format limits, and sample rate). Tier 2 is enabled only after the community hub has submission rules, asset/format validation, and moderation/abuse controls, because arbitrary uploaded art and audio raise moderation, licensing/IP, distribution, and untrusted-file-handling concerns.
-
-The schema supports custom asset references from the start. Release builds load them only with the signed, unexpired, non-revoked hub publication attestation defined in `docs/mvp-contract.md`; ordinary side-loading cannot bypass the Tier 2 gate.
-
-## Presentation vs Engine Boundary
-
-A simple rule governs what creators can and cannot change:
-
-- Data (creator-controllable): presentation (tilesets, sprites, audio, backdrops, and theme asset manifests) and narrative (story branching, checks, encounters, and character stat/spell composition).
-- Engine (fixed, proprietary): combat rules, the d100 dice system and its locked limits, spell behaviors/effects, UI behavior, and the built-in skin-token sets.
-
-Creators re-author and reskin the world to fit their own idea, but they play by the same rules and reuse the engine's spell/effect library. New mechanics or new spell effects require engine support and are out of scope for data packs.
-
-## Sharing And Attribution
-
-Packs are planned to be shared through the future community hub (`les-perissables-hub`), where creators will sign in with Discord or GitHub. The uploading account will control its listing and supply rights/attribution information; uploading alone will not prove copyright ownership. Other players may like and comment only after the public UGC gate. See "Community Website" and "Community Content And Licensing Boundary" in `docs/mvp-contract.md` for normative requirements.
-
-## Repo Boundary
-
-Planned split:
-
-- `perissables`: proprietary game runtime, built-in assets, client/server code (`les-perissables` package prefix)
-- `les-perissables-stories`: MIT-licensed schemas, tooling, examples, and creator docs
-
-That boundary matters because the goal is to let creators author new data without granting rights to the game runtime itself.
-
-After Phase 01 creates `les-perissables-stories`, the reusable pack schema and validation rules will live there as an MIT library crate alongside the `storycheck` CLI. Everything that validates packs will depend on the same pinned crate release and conformance corpus: the game loader, `storycheck`, and the future proprietary `les-perissables-hub`. The planned hub is a single-crate app, not a multi-crate workspace.
-
-## Compatibility Rule
-
-Multiplayer sessions require one matching aggregate compatibility tuple across the server and all players. Release-ready hosted servers serve built-in packs from their immutable artifact; client-driven community-pack fetch/upload is post-MVP. Exact fields, hashing, provisioning boundary, and validation rules stay locked in `docs/mvp-contract.md`.
-
-## Untrusted Input Rule
-
-Community packs are hostile input until validated. Pack loading and `storycheck` must enforce the locked size/path/count limits, reject path traversal and symlinks, parse TMX/XML with external entities and external resources disabled, and keep parser fuzz targets for JSON/TMX boundary cases. Release validation runs only inside the exact fail-closed Linux Landlock/seccomp or Windows AppContainer/Job Object worker profile in `docs/mvp-contract.md`; an unavailable required primitive makes validation unavailable rather than weakening isolation.
-
-## Authoring Principles
-
-- Stories should stay declarative and readable.
-- Schema validation errors should point to the exact failing path when possible.
-- Tooling should catch cross-file problems before a pack is shared.
-- Community content should feel first-class, but it should remain safely outside the proprietary runtime boundary.
+- `perissables` runtime, built-in assets, and built-in content are All Rights
+  Reserved.
+- `les-perissables-stories` schema, validator, tooling, and creator examples
+  are MIT.
+- Creator pack licenses apply to those packs only and grant no rights to the
+  proprietary runtime or built-in assets.

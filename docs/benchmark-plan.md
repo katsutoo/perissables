@@ -1,84 +1,191 @@
 # Benchmark Plan
 
-Status: Normative performance experiment
+Status: Normative performance experiment policy
 Owner: Project team
-Updated: 2026-08-09
+Updated: 2026-08-11
 
-Authority: workload methodology and evidence rules are normative here; product/protocol values derive from "Locked Runtime Constraints," "Locked Protocol And Limits," and "Release Rollback v1" in `docs/mvp-contract.md`.
+Performance is established by production-mode measurements, not by contract
+detail or code inspection. Product targets come from `docs/mvp-contract.md`.
 
-## Decisions And Gates
+## Decisions Supported
 
-Benchmarks validate production-profile artifacts after correctness tests pass. Phase 17 produces pre-release evidence; Phase 18 reruns every gated client workload and the full server gate against the exact final package/image digests and production-equivalent configuration before Release-ready. The full server gate means the main workload at `25%`, `50%`, `75%`, and `100%` plus every recovery/bound workload. Server processing, same-region end-to-end latency, client frame/update behavior, and all CPU/RSS/volume/network/queue/SQLite commit-and-checkpoint headroom limits are gates; public internet RTT, non-recovery cold start, and artifact size are report-only. A faster result with errors, dropped work, missed validation, or changed behavior fails.
+1. **Phase 10 storage decision:** choose the store, state representation,
+   durability boundary, commit cadence, and operational budgets.
+2. **Phase 12 release capacity:** determine whether the production-shaped server
+   meets the session/player, latency, reliability, and headroom goals.
+3. **Phase 12 client gate:** calibrate the reference machine and verify the 60
+   FPS experience for frozen gameplay scenes.
+4. **Phase 13 final validation:** rerun applicable gates against exact final
+   server/package digests.
 
-## Environment Lock
+Phase 02 may collect directional timings for instrumentation sanity, but those
+numbers are not release claims.
 
-- Build with the pinned Rust toolchain, committed lockfile, production release profile, exact target/features, and shipped assets.
-- Before Phase 17 load testing, record and freeze the Railway service plan, region, CPU/memory limits, volume configuration, replica count, runtime variables, and deployment digest. Production must use the same or a demonstrably larger shape.
-- Record the load-generator host/region, its `19` independently throttled effective source IPs, trusted-proxy attribution path, CPU/memory, OS/kernel, network path, tool versions, power/thermal state where applicable, and unrelated load. Header spoofing is forbidden; each effective IP must be observable as the same source the production limiter keys. Frozen `auth-reconnect-schedule-v1.json` maps every synthetic account/client to a source-IP index, exact local bind/route, join/rejoin send offset, requested session, and expected limiter/concurrency state; the driver verifies the observed server limiter key and never relies on NAT choosing the route.
-- Establish the first client baseline on a named project-owned reference machine. Record immutable CPU, RAM, GPU, driver, OS, display, and power-mode details; future comparisons use the same machine or are labeled directional.
+## Common Rules
 
-## Server Workload
+- Correctness tests pass before timing.
+- Use release/production profiles, exact features/targets, and shipped assets.
+- Record Git SHA/dirty state, artifact digests, commands, tool versions,
+  environment, workload version/checksum, duration, operations, errors, and raw
+  result location.
+- Separate warmup, measured work, setup, and recovery.
+- Report independent runs in addition to operation samples.
+- Randomize or interleave baseline/candidate order.
+- Preserve timeouts, late starts, dropped work, and errors. Faster incorrect
+  output fails.
+- Predeclare practical thresholds after measuring the environment noise floor
+  and before candidate comparison.
+- Never average percentiles.
 
-- Artifact: deployed `les-perissables-server` release build with one active instance and planned fixture `benchmark-fixture-v1`. Phase 13 will create `benchmarks/fixtures/v1/`, its archive, canonical checksum, schema/rules versions, action traces, expected counters, and expected payload-size distribution, then freeze those protocol/gameplay components. Phase 14 will add/freeze authentication/reconnect/token-handoff/slow-writer components; Phase 16 will add/freeze SQLite database-schema, persisted-session-row, commit-failure, and checkpoint/recovery components after persistence can generate and validate them. Each component has its own checksum in the fixture manifest; changing a frozen component creates `v2`, never silently updates v1.
-- Fixture shape: one `512x512` CSV TMX map, `512` story nodes, `128` encounters, `64` characters, and `256` flags exercise maximum content-state bounds without making every client projection a maximum-size payload. The steady-state trace freezes encoded state payloads in the `2..=8 KiB` range with p50 at or below `4 KiB`, encoded event payloads in the `0.5..=4 KiB` range when present, and no resync payload during the normal measured interval. Its precomputed expected aggregate ingress plus egress at `100%` offered rate must be at or below `40 MiB/s`, leaving at least `10 MiB/s` beneath the gate for measured protocol/transport overhead; a fixture that cannot prove that budget is invalid before load testing. The fixture manifest records exact archive/file/expanded bytes, per-message expected encoded sizes, expected traffic by message class, and expected validation result. It uses synthetic text/media and no proprietary production account data. Boundary-size frames are measured separately by `max-payload-v1`.
-- Load model: open-loop, `64` sessions with `4` authenticated clients each (`256` clients), `20` scheduled inputs per client per second (`5,120 msg/s` offered).
-- Session distribution is fixed at `32` world, `16` story-vote, and `16` combat sessions. Trace seed is `0x4c505f42454e4348`. World clients send held-direction replacements; story clients alternate choices using the locked vote-replacement semantics; combat clients follow a precomputed player/enemy-turn trace and use the reserved syntactically valid but nonexistent fixture ID `ent_invalid_benchmark_target` for expected target rejections. At `100%`, a complete `10-minute` run schedules `3,072,000` inputs: `1,536,000` world, `768,000` story, and `768,000` combat. The fixture contains separate frozen schedules and independently reviewed exact operation/outcome/reason counters for `25%`, `50%`, `75%`, and `100%`; lower load points are not obtained by merely stopping a full-rate trace early. Fixture resets, vote closure, enemy turns, deaths, and actor rotation are explicit trace operations and included in each load point's `expected-outcomes.json`. Late/dropped starts, unexpected outcomes, and count deviation fail the run.
-- Run shape: `2 minutes` warmup, `10 minutes` measured steady state, `5` independent process/deployment runs. Randomize candidate/baseline order for later comparisons.
-- Processing latency starts when the complete reassembled input frame becomes available to the server before JSON/protocol/authentication/rate/sequence validation. It ends when the async WebSocket send of that input's correlated `input_result` completes after mailbox/ledger queueing and any required grouped SQLite commit. Correlate by `input_seq`; report aggregate and applied/rejected/superseded classes separately.
-- Scheduled client-send to matching client-receive latency from the same-region load generator is the open-loop end-to-end gate. It includes generator delay, network, validation, queueing, commit, writer delay, and receive processing. Public internet RTT outside this controlled path is reported separately.
-- Authentication happens before warmup using `256` project-controlled Steam publisher test accounts explicitly authorized for staging and distributed deterministically across the same `19` effective source IPs. Setup is paced within every source/session/identity bucket; tickets are validated normally and never recorded. If the account/IP pool, trusted-proxy attribution, or Steam test authorization is unavailable, the hosted benchmark is `BLOCKED`; do not add an auth bypass, spoof forwarding headers, reuse one identity across seats, or load-test Steam itself.
+## Phase 10 Storage Spike
 
-## Recovery And Bound Workloads
+### Question
 
-- `restore-clean-v1`: cleanly stop one isolated staging instance with `64` maximum-size durable sessions and deploy the identical digest. Record `shutdown_start_ns` when readiness first flips false and `persistence_closed_ns` after all required commits, SQLite `wal_checkpoint(TRUNCATE)`, connection close, and process-lock release; that interval is at most `20s`. In the successor, record `process_start_ns` at the first statement in `main` and `ready_ns` after lock acquisition, SQLite open/integrity checks, row restoration, and the first successful internal readiness state; that separate interval is at most `20s`. Gate: all sessions checksum/restore exactly, no admission before readiness, and peak RSS within the normal headroom gate.
-- `restore-crash-v1`: kill the same isolated instance immediately after a recorded SQLite commit and separately while a later transaction/checkpoint is in flight, then deploy the identical digest. In the successor, `process_start_ns` is the first statement in `main`, `lock_acquired_ns` follows exclusive process-lock acquisition, and `ready_ns` follows SQLite WAL recovery, bounded integrity/row validation, exact session restoration, and the first successful internal readiness state. Gate: process-start-to-ready at or below `20s`, the committed transaction is present, the uncommitted transaction is absent, and there is no pre-lock admission or split writer. Retain all raw timestamps and the killed process's last commit/checkpoint state.
-- `reconnect-v1`: after steady state, disconnect all `256` clients and reconnect their reserved seats uniformly over `30s`, distributed so each of the `19` effective source IPs makes at most `14` attempts in that window and every requested-session bucket remains within its limit. Gate: zero `rate_limited`, no new capacity consumption, all token handoffs/resync acknowledgements complete within `10s` of each connection, zero duplicate semantic events, and zero unexpected errors.
-- `slow-writer-v1`: a controlled local proxy or socket receive-window fixture applies backpressure to one synthetic client per session while others continue. Drive each selected connection until its application writer queue reaches refusal, recording buffered bytes and duration; do not assume that five seconds of not reading fills kernel/proxy buffers. Gate: only those `64` clients are disconnected through the documented bounded queue path, queue bytes never exceed contract limits, owner mailboxes remain below `50%` p99, and healthy clients remain connected.
-- `sqlite-checkpoint-v1`: begin with a `48 MiB` SQLite `-wal` file and all sessions active, run the configured checkpoint while processing `50%` offered rate, and kill/restart in separate runs before checkpoint start, during checkpoint, after SQLite reports completion, and during the final clean `TRUNCATE` checkpoint. Gate: SQLite recovery returns every committed row and no uncommitted row, snapshot checksums/revisions match, the WAL reaches at most `16 MiB` after successful truncation, accounted artifacts remain below the ordinary-work threshold, no healthy input is cap-blocked, and processing latency remains within the normal gate.
-- `max-payload-v1`: public-protocol setup traces construct the largest valid resync/state projections and a gameplay/story action chain that emits exactly `64` required event items; direct writer injection is forbidden. With unrelated gameplay input paused, test one frame type at a time: resync, state, then event. Cover all clients in four deterministic waves of `64` and start the next wave only after every prior writer queue drains; verify the setup revisions/events before timing and record bytes plus drain time for each wave. Gate: every frame remains within its individual cap, only the intended bundle is queued, zero queue overflow/disconnect occurs, queues return to zero within `5s` per wave, and the driver records actual peak and average throughput. The steady-state `50 MiB/s` budget does not apply to an instantaneous diagnostic burst; this workload cannot establish sustained capacity.
+Which mature storage design gives the required recovery semantics with the
+lowest operational and implementation cost?
 
-## Client Workload
+At minimum compare bundled SQLite on the actual Railway volume with managed
+PostgreSQL if SQLite misses a gate. Evaluate full snapshots, bounded
+deltas/checkpoints, and candidate durability boundaries using implemented
+session DTOs rather than invented byte blobs.
 
-- Phase 17 artifact: production-profile Linux/Windows client candidate with the exact release asset layout, not a debug build or dev launcher. Phase 18 artifact: the exact signed/checksummed Steam package candidate; every gated client run is repeated against its final digest.
-- Phase 13 will version client workloads under `benchmarks/fixtures/v1/client/`. `world-v1` uses the frozen benchmark map and a fixed ten-minute traversal/input trace; `story-v1` uses fixed maximum-visible text, eight choices, vote updates, focus traversal, and expected revisions/events; `combat-v1` uses the fixed four-party/sixteen-enemy state and precomputed turn/action trace. Each immutable source manifest records initial state, story/map/pack IDs, four-client topology, UI actions entered through the shipped input/network path, expected revisions/events/screens, included fixture-file hashes, and workload checksum. The mutable artifact/server digests belong only to each run manifest, so Phase 17/18 reruns do not modify source workloads. "Representative" or manually chosen scenes are not gated evidence.
-- Run each required resolution for `10 minutes` under each frozen `world-v1`, `story-v1`, and `combat-v1` trace after `2 minutes` warmup.
-- Perform `5` independent runs per OS/resolution/scene on the frozen reference hardware.
-- Use verified refresh in `59.94..=60.00 Hz` with VSync enabled and unchanged across runs. Frame time is consecutive presentation-callback timestamps from the monotonic clock; update time and CPU render/submission time are measured separately around those functions. The 60 FPS gate requires unfiltered presentation frame-time p99 at or below `(1000 / measured_refresh_hz) + 0.02 ms` (approximately `16.70 ms` at `59.94 Hz`), no unexplained update backlog, no silently missed fixed updates, and no frame above `100 ms`. A predeclared OS/device interruption must have external trace evidence and invalidates the complete independent run rather than deleting samples; preserve it and rerun once under the same protocol. The locked five-update/`250 ms` accumulator cap is exercised separately; dropped logical time must increment the exact diagnostic once. Report measured refresh plus p50/p95/p99/max frame and update time separately.
+### Workloads
+
+- Typical lobby, world, story, combat, and summary states.
+- Maximum valid state generated through public rules/schema.
+- One changing session, expected concurrent load, and the release capacity goal.
+- Semantic actions, continuous movement, disconnect/rejoin handoff, and session
+  end.
+- Clean shutdown, immediate crash after acknowledged work, crash during a write,
+  recovery, checkpoint/maintenance, and storage-unavailable behavior.
+
+### Metrics And Decision Record
+
+Record p50/p95/p99/max commit and acknowledgement latency, achieved operations/s,
+bytes written, write amplification, fsyncs, CPU, peak RSS, volume growth,
+recovery duration, correctness/errors, backup/restore behavior, and operator
+steps.
+
+The decision must state:
+
+- production environment and independent run count;
+- selected store, schema/state representation, and acknowledgement boundary;
+- measured batching/cadence, queue, storage, and recovery budgets;
+- headroom and uncertainty;
+- rejected alternatives; and
+- the smallest workload that would invalidate the decision.
+
+A tiny local database or debug binary cannot establish this gate.
+
+## Server Release Workload
+
+The final capacity workload is open-loop:
+
+- target `64` sessions with `4` authenticated clients each;
+- up to `20` scheduled gameplay inputs/client/s;
+- mixed world, story-vote, and combat sessions;
+- frozen typical payload distribution plus separate maximum-payload tests;
+- load points at `25%`, `50%`, `75%`, and `100%`;
+- `2 minutes` warmup, `10 minutes` steady state, and `5` independent
+  server/driver process runs per gated load point.
+
+The Phase 12 fixture freezes exact seeds, traces, expected outcomes/reasons,
+encoded-size distributions, and operation counts. Lower load points have
+complete schedules; they are not truncated high-load traces.
+
+Authentication setup occurs outside the measured interval using project-owned
+authorized Steam test accounts. After the production limiter is implemented,
+derive and provision the real source-IP topology needed to remain within every
+source/session/identity bucket. Header spoofing, auth bypasses, one identity
+across seats, and load against Steam itself are forbidden. Missing accounts,
+authorized staging, or real limiter-keyed routes makes the hosted benchmark
+`BLOCKED`.
+
+### Server Gates
+
+- Processing latency p95 below `100 ms`, p99 below `200 ms`.
+- Same-region scheduled-send-to-receive p95 below `150 ms`, p99 below
+  `300 ms`.
+- Offered and achieved rates, late starts, timeouts, and every expected/actual
+  outcome count agree with the frozen workload.
+- No unexpected error, disconnect, unreported missed tick, or healthy-client
+  queue overflow.
+- Sustained CPU, peak RSS, volume, and network use retain at least `30%`
+  measured allocation headroom.
+- p99 bounded-queue occupancy remains below the frozen Phase 12 headroom gate.
+- Storage commit/recovery gates use the Phase 10 decision rather than obsolete
+  pre-spike assumptions.
+
+Every gated outcome class needs enough samples for its reported percentile;
+rare classes are reported without a fabricated p99.
+
+## Recovery And Boundary Workloads
+
+Run separately from steady state:
+
+- clean restart and crash recovery at the selected acknowledgement boundary;
+- all-client reconnect spread within real limiter budgets;
+- one backpressured client per session while healthy clients continue;
+- selected-store maintenance/checkpoint behavior;
+- maximum valid state, event, result, and resync payloads; and
+- storage full/unavailable behavior through the safe test mechanism defined by
+  Phase 10.
+
+Each workload declares setup, stop conditions, expected state/checksum,
+timeout, cleanup, and whether it is a correctness gate or diagnostic.
+
+## Client Calibration And Workload
+
+Use one named project-owned reference machine. Record CPU, RAM, GPU, driver, OS,
+display, power/thermal mode, exact build, and unrelated load.
+
+Before setting the gate:
+
+1. measure actual refresh and presentation callback behavior with the smallest
+   production render path;
+2. measure timer/driver interval noise and run-to-run variation;
+3. freeze a tolerance and missed-refresh budget that exceed that noise but still
+   protect the 60 FPS experience; and
+4. publish the calibration artifact before candidate measurement.
+
+The gate is then p99 presentation interval at or below one measured refresh
+interval plus the frozen calibrated tolerance, within the frozen missed-refresh
+budget, with no unexplained update backlog, no silently dropped logical update,
+and no frame above `100 ms`.
+
+Frozen `world`, `story`, and `combat` traces run at both required
+resolutions after warmup for at least `10 minutes`, with `5` independent
+runs per OS/resolution/scene. Report presentation and update distributions
+separately. Exercise the fixed-update catch-up/drop policy in its own
+correctness workload rather than mixing a forced stall into normal frame data.
 
 ## Required Metrics
 
 | Area | Metrics |
 | --- | --- |
-| Server latency | p50, p95, p99, max, sample count, histogram range/precision |
-| Load | offered/achieved msg/s, state broadcasts/s, tick interval/jitter, missed ticks |
-| Reliability | errors by expected/unexpected kind, timeouts, disconnects, queue saturation, dropped/coalesced states |
-| Resources | CPU user/system, peak RSS, allocations if available, disk writes/fsyncs, network bytes |
-| Payload | p50/p95/p99/max inbound, state, event, resync, persisted-session snapshot, SQLite transaction, database, and WAL sizes |
-| Client | frame/update distributions, missed updates, CPU, peak RSS, GPU utilization when available |
-| Artifact | compressed/uncompressed package and executable size, stripped/symbol status |
-| Startup | cold process-to-ready, restoration time and restored session count |
+| Latency | p50, p95, p99, max, samples, histogram range/precision |
+| Load | offered/achieved ops/s, late starts, ticks/broadcasts |
+| Reliability | outcomes, errors, timeouts, disconnects, dropped/coalesced work |
+| Resources | CPU user/system, peak RSS, allocations when useful |
+| I/O | database bytes/fsyncs, volume growth, network ingress/egress |
+| Queues | occupancy distribution, refusal/overflow/coalescing |
+| Client | presentation/update intervals, missed refreshes, CPU/RSS/GPU |
+| Artifact | executable/package compressed and uncompressed size |
+| Startup | cold start, process-to-ready, restored sessions |
 
-Before the first gated run, convert the frozen Railway limits into numeric report values. Required headroom gates are sustained CPU at or below `70%` of allocation, peak RSS and volume use at or below `70%`, SQLite accounted artifacts below `768 MiB` with at least `256 MiB` provider free space, aggregate instance ingress plus egress at or below the fixed `50 MiB/s` MVP budget, p99 session-mailbox/writer-queue/persistence-queue occupancy at or below `50%`, zero queue overflow for healthy clients, and p99 SQLite group-commit latency below `50 ms`. SQLite latency starts when a staged post-state enters the persistence batch and ends after `COMMIT` succeeds under the verified `synchronous=FULL` configuration, so it includes the locked maximum `20 ms` batching delay. Report checkpoint latency and request interference separately. Client peak RSS is capped at `1 GiB` on the reference machine.
+## Harness And Artifacts
 
-Run the workload at `25%`, `50%`, `75%`, and `100%` of offered rate with the same seeded state machine. The gated `100%` point must remain below saturation by the headroom rules; do not increase load until failure or affect production/third-party availability.
+The repository-owned driver uses shared protocol DTOs, an open-loop monotonic
+scheduler, bounded tasks/connections, explicit expected results, and lossless
+raw samples or compatible histograms. Calibrate it independently and prove that
+it sustains at least `125%` of target offered rate without becoming the
+bottleneck.
 
-## Harness And Raw Result Contract
+Store versioned synthetic fixtures in source control. Keep redacted run
+manifests, raw samples/histograms, logs, commands, and summaries under
+`artifacts/benchmarks/<git-sha>/<run-id>/`; raw operational artifacts remain
+out of Git and follow finite retention.
 
-- Phase 13 will create the repository-owned benchmark driver as a non-shipping binary target in `les-perissables-integration-tests`, built with the pinned toolchain and release profile. It will use shared protocol DTOs, frozen traces, an open-loop monotonic scheduler, explicit source-address binding, and a bounded connection/task pool; it will not duplicate protocol serialization or game rules.
-- Every scheduled operation records `scheduled_send_ns`, `actual_send_ns`, `receive_ns`, server frame-available/send-complete timestamps, session/player/input sequence, expected outcome/reason, actual outcome/reason, encoded request/response bytes, timeout status, late-response status, and run ID. `receive_ns` is sampled immediately after the complete `input_result` frame is received, parsed, schema-validated, and correlated, before any next operation is processed. A scheduled start is late when `actual_send_ns - scheduled_send_ns > 1 ms`; more than `0.1%` late starts invalidates the run. Scheduled-send latency is the end-to-end open-loop measurement; actual-send latency is retained only to diagnose driver delay. Server processing latency comes from the server's correlated monotonic instrumentation and is never reconstructed from client clocks.
-- Histograms use one pinned HDR-compatible implementation with `1 us` lowest discernible value, `60 s` highest trackable value, and three significant digits. Values beyond the range and timed-out operations are counted explicitly and fail the run; they are never clamped or omitted. Compatible raw histograms may be merged, but run-level percentiles are never averaged.
-- The normal input-result timeout is exactly `1s` from `scheduled_send_ns`. A response received later remains in raw records as late, cannot erase the timeout, and still counts toward both the correctness and error totals. Reconnect/resync uses its separate `10s` workload deadline. The driver writes newline-delimited JSON operation records, one JSON run manifest, and lossless histogram files. The manifest includes schema version, Git SHA/dirty state, client/server artifact digests, exact commands, tool versions, fixture/workload versions and checksums, seed, run order, monotonic clock source, start/end wall time, offered/achieved rate, warmup/measurement durations, client/session counts, source-IP schedule checksum, timeout policy, histogram configuration, expected/actual counters, error totals, and host/environment capture.
-- Warmup records are tagged and excluded by the fixed time boundary rather than deleted. Setup, authentication, and fixture reset happen outside the measured interval. The driver verifies expected state/counters before and after timing and exits non-zero on correctness, count, late-start, timeout, or serialization mismatch.
-- Each independent run uses a fresh server process or deployment and a fresh driver process. Later baseline/candidate comparisons generate a seeded randomized or interleaved order before execution and retain that order; rerunning only an unfavorable side is forbidden.
-- Before accepting the harness, run a loopback calibration with a no-op protocol fixture to establish scheduler delay, timestamp overhead, maximum sustainable generator rate, CPU use, socket/file-descriptor headroom, and the measurement noise floor. A gated run is invalid if the driver exceeds `70%` CPU allocation, misses more than `0.1%` of scheduled starts, or cannot sustain at least `125%` of the target offered rate in calibration.
-
-## Pass And Interpretation
-
-- Server processing latency passes only when every independent run satisfies p95 `<100 ms` and p99 `<200 ms` for the aggregate and separately for each outcome class with at least `10,000` samples. Applied and expected-rejection classes always exceed that sample floor in the frozen workload; absent/rare superseded classes are reported without a percentile gate. The same-region scheduled-send-to-receive distribution must satisfy p95 `<150 ms` and p99 `<300 ms`. All resource/headroom gates above, exact expected outcome/reason counts, zero unexpected errors/disconnects, and no unreported missed tick are also required.
-- Client behavior passes only when every required matrix run meets the frame/update gate without correctness failure.
-- Predeclare a practical regression budget before baseline/candidate comparison and measure the machine's noise floor. Report effect size, independent run count, harness uncertainty or run-to-run range; uncertainty crossing the budget is `INCONCLUSIVE`.
-- Never average percentiles or infer them from a mean. Merge compatible raw histograms or report run-level distributions.
-
-## Artifacts
-
-Store exact build and benchmark commands, redacted configuration, environment capture, workload seed, raw NDJSON samples/histograms, run manifest, logs, and a Markdown summary under `artifacts/benchmarks/<git-sha>/<run-id>/`. Keep raw run artifacts out of source control and retain them according to the contract; versioned synthetic fixtures, workload definitions, expected counters, and redacted summaries remain reproducible source/release-history artifacts. Profiling output explains a measured result and never substitutes for an unprofiled benchmark.
+Verdicts are `PASS`, `FAIL`, `BLOCKED`, or `INCONCLUSIVE`. Uncertainty
+crossing a practical threshold is `INCONCLUSIVE`. Profiling explains a
+measured result but never substitutes for an unprofiled benchmark.

@@ -2,60 +2,108 @@
 
 Status: Normative release-behavior policy
 Owner: Project team
-Updated: 2026-08-09
+Updated: 2026-08-11
 
-Authority: release-behavior methodology and verdicts are normative here; expected product/protocol values derive from the named locked sections of `docs/mvp-contract.md`.
+QA exercises the product through a supported shipped entrypoint. Internal state
+machines, parser matrices, and storage fault injection belong to automated
+tests. QA observes the user-visible consequences and durable effects.
 
 ## Verdicts
 
-- `PASS`: all applicable acceptance scenarios passed on the identified artifact and no known open defect affects a required scenario.
-- `PASS WITH KNOWN ISSUES`: all required scenarios passed, but one or more documented `Major`/`Minor` defects remain with an owner, target date, workaround, and explicit residual-risk acceptance.
-- `FAIL`: a release criterion failed or a blocker/critical defect is reproducible.
+- `PASS`: every applicable required journey passed on the identified artifact
+  with no release-blocking defect.
+- `PASS WITH KNOWN ISSUES`: required journeys passed; only documented
+  non-blocking defects remain with an owner and accepted residual risk.
+- `FAIL`: a release criterion failed or a blocker/critical defect is
+  reproducible.
 - `BLOCKED`: a prerequisite prevented meaningful execution.
-- `INCONCLUSIVE`: evidence is ambiguous, contradictory, or intermittently failing.
+- `INCONCLUSIVE`: evidence is ambiguous, contradictory, or intermittent.
 
-Every report has `stage: pre_release` or `stage: final` plus exactly one verdict from the exhaustive list above. Phase 17 requires `stage: pre_release` `PASS` against the production-profile server image and both OS client-candidate digests for scenarios `1..=9` plus `11`; it is not a Release-ready verdict. After Phase 18 creates Steam/package/signing/rollback artifacts, every scenario including `10` is rerun with `stage: final`, and the final benchmark rerun is linked from the report. Release-ready requires final `PASS`; `PASS WITH KNOWN ISSUES` does not satisfy that gate. Retrying until green, undeclared artifact/configuration changes, or hiding an intermittent result is forbidden. Scenario-defined restart/deploy/rollback transitions are allowed only when all before/after digests/configurations and the intended final deployed state are declared before the run.
+Every report also recommends `ship`, `hold`, or `no recommendation`.
+Release-ready requires final `PASS`; the release owner records the decision.
 
-Every report also gives a separate release recommendation: `ship`, `hold`, or `no recommendation`. A final `PASS` is required before QA may recommend `ship`; `FAIL` requires `hold`; `BLOCKED` or `INCONCLUSIVE` requires `no recommendation` unless a documented release criterion independently requires `hold`. The named release owner makes the decision and records any departure from the QA recommendation.
+## Evidence
 
-## Evidence Record
+Record:
 
-Every run records the Git SHA and dirty state, every artifact checksum/digest used, build command/profile/features, target environment and URL, before/after non-secret configuration, intended final deployed state, OS/runtime/GPU/driver, display resolution/scaling, account role, synthetic test data, exact steps, expected result, actual result, logs/network/durable effects, cleanup, and artifact location under `artifacts/qa/<git-sha>/<run-id>/`. Secrets, tickets, tokens, provider subjects, and personal data are redacted.
+- Git SHA, dirty state, artifact digest, build profile/features, and command;
+- target environment/URL and non-secret configuration;
+- OS build, GPU/driver, resolution, UI scale, and input mode;
+- synthetic account roles/data;
+- exact steps, expected result, actual result, visible and durable effects;
+- logs or captures with secrets/personal data redacted; and
+- cleanup and untested residual risk.
 
-## Release-ready Client Matrix
+Preserve the first intermittent failure. Diagnostic reruns use the same artifact
+and a stated protocol; a later pass does not erase it.
+
+## Supported Matrix
 
 | Target | Required environment |
 | --- | --- |
-| Linux | Ubuntu 24.04 LTS x86_64; freeze and record exact ISO/image digest plus package snapshot before the run; `1280x720` and `1920x1080` |
-| Windows | Windows 11 24H2 x86_64; freeze and record full OS build/UBR and update IDs before the run; `1280x720` and `1920x1080` |
+| Linux | Frozen Ubuntu 24.04 LTS x86_64 image; `1280x720` and `1920x1080` |
+| Windows | Frozen Windows 11 x86_64 build; `1280x720` and `1920x1080` |
 
-Record GPU/driver and windowed/fullscreen mode. Keyboard-only operation and all shipped behavior-identical built-in UI variants (at least two) are product requirements from `docs/mvp-contract.md`; any additional supported controller gets its own matrix row before release. Other distributions and Steam Deck are exploratory until explicitly added to the support contract.
+Record windowed/fullscreen mode, UI scale, GPU, and driver. Keyboard-only
+operation and every shipped UI variant are required. Other Linux distributions,
+Steam Deck, controllers, and additional display modes are exploratory until
+added to the support contract.
 
-## Required Scenarios
+## Required Journeys
 
-1. Install/start with a clean user-data directory; missing optional local settings produce the exact canonical `Client-Local Settings v1` object in memory without creating authoritative state. Exercise every field/conflict-group/keyboard-path boundary and verify malformed/future settings are preserved, reported once, and never destructively rewritten. Inject failure at temporary write, file sync, rename, and directory sync; reopen and prove the previous valid file remains byte-identical.
-2. Complete the canonical lobby -> story selection -> unique character lock -> all-ready owner start -> story -> checks -> combat -> summary acknowledgement/timeout -> reset lobby flow three consecutive times without stale state.
-3. Exercise all three themes and every shipped built-in UI variant with identical action/focus order and hit targets. At each required resolution and the contract's `100`/`200` UI scales, all required text fits its declared box without clipping/overlap, keyboard focus is always visible with at least a `2px` indicator, every action is reachable without a pointer, and each audio channel independently reaches `0` and `100` without changing another channel. Validated presentation-time image/audio/skin failures use the exact `Presentation Fallback v1` assets/silence/diagnostic behavior; missing required content and unattested Tier 2 bytes reject activation instead of falling back. Corrupt each boot-critical fallback resource in an isolated package and verify deterministic package-integrity startup failure without recursion.
-4. Run deterministic 2-, 3-, and 4-player hosted sessions and verify revision/event convergence plus fifth-player and capacity rejection.
-5. Drop the first initial `join_response` and prove the same identity/mode/session/`client_join_nonce` recovers the same IDs with a fresh token and no duplicate seat/session. Then disconnect during world, story choice, and combat turns; complete and durably acknowledge token rotation plus resync, repeat the disconnect using the new token, and verify old/pending generations, generation-guarded takeover closes, no duplicated action/audio events, and authoritative state follow the handoff contract. Drop `rejoin_response` before receipt and prove the old token creates a replacement handoff; separately receive the response then drop before `resync_ack` and prove the known pending token resumes it. Neither path may grant two active connections.
-6. Run both `restore-clean-v1` and `restore-crash-v1` during a run. Measure separately: clean drain plus final SQLite checkpoint/close and process-lock release at or below `20s`; clean successor process-start-to-ready at or below `20s`; and crash successor process-start through process-lock acquisition, SQLite WAL recovery, row validation, and readiness at or below `20s`. Verify exact durable state, no split owner/admission, no acknowledgement of an uncommitted transaction, rejoin within persisted grace, and successful run completion.
-7. Exercise invalid/expired Steam proof, token, version, checksum, sequence, rate, and frame/message boundaries and verify stable errors without leaked internals.
-8. Inject SQLite open/busy/begin/write/commit/checkpoint failures, persistence-queue saturation, the `768 MiB` ordinary-work threshold, low free space, disk full, interrupted WAL checkpoint, corrupt/oversized/future-version session rows, failed row quarantine, database-level corruption, unavailable backup, and graceful-shutdown deadline behavior. Verify unchanged committed rows/sequences/revisions after failed transactions, preserved terminal headroom, bounded startup checks, ordinary SQLite WAL crash recovery, invalid-row quarantine plus `session_not_found`, global corruption keeping readiness false with bytes untouched, redacted operator evidence, and no claim of a clean checkpoint on deadline failure.
-9. In the local single-player creator-test path, install a valid Tier 1 aggregate community pack and reject traversal, alias, oversized, malformed, unsupported-version, checksum-mismatch, a Tier 1 pack containing `theme:`/`themes/*.json`, and unattested Tier 2 packs without external access or residue. On both supported OS baselines, verify the worker cannot create a socket, open a forbidden path, spawn/escape a child process, exceed its limits, inherit unrelated handles, or leave residue, and that an unavailable required sandbox primitive fails closed. Verify hosted multiplayer remains built-in-only.
-10. Build/package both targets, inspect contents for debug-only characters/keys/features and secrets, launch the shipped binary, verify Steam depot layout, validate every digest/version/command in `rollback-manifest.json`, and execute the complete isolated-staging server plus Steam test-branch rollback within its locked deadlines. Verify exact continued authoritative state, coordinated protocol compatibility, signatures/checksums, and no improvised artifact or destructive downgrade.
-11. Open the current SQLite `database_schema_version`, exercise every additive migration introduced within the rollback window, and prove the retained rollback build can still open the candidate database. Restore the current save and client-settings versions plus the immediately previous positive version of each when one exists through the tested artifact; verify exact migrated state, idempotent re-open, malformed/oversized/future/too-old rejection, the exact canonical settings defaults, the prepared next-version rollback reader when applicable, and rollback behavior without destructive downgrade. Version `1` records previous-version coverage as not applicable rather than fabricating a version `0` fixture.
+1. **Clean install and startup.** Launch from a clean user-data directory,
+   exercise settings creation/recovery through the UI, relaunch, and confirm no
+   authoritative state or secret is stored locally.
+2. **Three-run loop.** Complete lobby -> selection -> ready/start -> story ->
+   check -> combat -> summary -> lobby three times without stale state.
+3. **Presentation and accessibility.** Exercise all themes and UI variants at
+   required resolutions/scales with keyboard-only navigation, visible focus,
+   readable text, independent audio channels, and presentation fallbacks.
+4. **Hosted convergence.** Complete deterministic 2-, 3-, and 4-player staging
+   runs; observe stable fifth-seat/server-capacity refusal without affecting
+   admitted players.
+5. **Reconnect.** Disconnect during world, story, and combat; exercise dropped
+   handoff response, acknowledged resync, takeover, token expiry, and no
+   duplicate visible action/audio event.
+6. **Supported recovery.** After Phase 11, restart cleanly and crash the isolated
+   staging process at declared user-visible points. Rejoin and verify behavior
+   matches the selected storage acknowledgement boundary. Internal storage
+   begin/write/commit/checkpoint matrices remain integration tests.
+7. **Trust boundaries.** Exercise invalid/expired Steam proof, wrong version or
+   pack identity, oversized traffic, and valid/invalid Tier 1 import through
+   normal user entrypoints. Confirm stable public errors, no leaked internals,
+   no external fetch, and no residue.
+8. **Final package and rollback.** On exact Phase 13 candidates, inspect package
+   contents, prove development identity/debug paths and secrets are absent,
+   launch both targets from clean caches, verify signatures/checksums/depot
+   layout, and complete the isolated rollback drill.
+
+Do not mutate the exact candidate to manufacture an internal failure and then
+describe the result as candidate QA. Modified negative packages or faulting
+environments are separate diagnostic artifacts with their own digest.
 
 ## Operations Oracles
 
-- `/healthz` succeeds while the process event loop is alive and does not claim dependency readiness.
-- `/readyz` fails until the exclusive process lock, SQLite WAL recovery, required pragma verification, bounded integrity/row-validation pass, and writable persistence prerequisites are satisfied; it remains successful when only new-admission capacity is exhausted and fails before graceful drain begins. No successor becomes ready before acquiring the process lock, and database-level corruption remains unready for operator restore.
-- Expected operational failures use stable external codes and structured internal context without credentials or personal data.
-- Shutdown stops admission, preserves the last committed SQLite state, awaits owned tasks and the persistence thread, performs the bounded final checkpoint/close when possible, releases the process lock only after close, and exits within the locked deadline.
+- `/healthz` reports process liveness only.
+- `/readyz` remains false until required initialization and selected storage
+  recovery are complete, and becomes false before graceful drain.
+- Capacity exhaustion rejects new admission but does not make healthy existing
+  sessions or reserved-seat rejoin unready.
+- Shutdown stops admission, preserves the selected durable boundary, awaits
+  owned work within its measured deadline, and does not claim a clean close
+  after forced termination.
+- Public errors are stable and redacted; internal logs retain useful structured
+  context without credentials or personal data.
 
-## Severity And Cleanup
+## Severity And Stages
 
-- `Blocker`: data/authority corruption, credential exposure, unrecoverable run loss, universal startup failure, or no safe workaround.
-- `Critical`: major supported flow unavailable, cross-player authority failure, repeatable crash, or severe persistence/reconnect failure.
-- `Major` and `Minor`: degraded behavior with a safe workaround or limited presentation impact.
-- Use synthetic accounts/data, avoid production and real third-party effects, restore local/staging state, and report anything that could not be cleaned up.
-- Reports list every scenario as passed, failed, blocked, inconclusive, or not applicable; they identify the tested build/environment/account roles, release recommendation, decision owner, cleanup result, and untested residual risk.
+- `Blocker`: authority/data corruption, credential exposure, universal startup
+  failure, or no safe workaround.
+- `Critical`: a major supported journey is unavailable, cross-player authority
+  fails, or a repeatable crash/recovery failure occurs.
+- `Major`/`Minor`: degraded behavior with a safe workaround or limited
+  presentation impact.
+
+Phase 09 may record a Playable-MVP report. Phase 12 records a production-profile
+pre-release report. Phase 13 reruns every applicable journey on exact final
+digests and is the only final Release-ready QA verdict.

@@ -2,7 +2,7 @@
 
 Status: Ready for Phase 01 implementation
 Owner: Project team
-Updated: 2026-08-11
+Updated: 2026-08-12
 
 This document is the source of truth for product, authority, compatibility, and
 release requirements. It intentionally does not pre-design every queue, storage
@@ -160,7 +160,10 @@ Playtest targets:
 ### Workspace
 
 The virtual workspace uses resolver `3`, Rust `1.97.1`, Edition 2024, and
-MSRV `1.97.1`. Initial members are exactly:
+MSRV `1.97.1`. Phase 01 adds a root `rust-toolchain.toml` as the only Rust
+toolchain pin, including `rustfmt` and Clippy. `mise` must not declare or
+install Rust; `mise.toml` is reserved for tools outside the Rust toolchain and
+local task aliases. Initial members are exactly:
 
 - `les-perissables-client`
 - `les-perissables-server`
@@ -416,7 +419,9 @@ documented retention.
 - Outside pull requests remain closed until legal review provides an inbound
   contribution policy.
 - `Cargo.lock` is committed. Git dependencies use immutable revisions.
-- `mise` is local convenience only; CI invokes Rust tooling directly.
+- Phase 01 adds `rust-toolchain.toml` to own Rust, Cargo, `rustfmt`, and Clippy.
+  `mise` is local convenience for other development tools and task aliases
+  only; CI invokes the pinned tools directly rather than invoking `mise` tasks.
 - Native `raylib`, Steamworks, and the selected storage dependency are pinned
   with acquisition, checksum, linkage, target, update, and license evidence
   before their release use.

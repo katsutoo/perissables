@@ -16,10 +16,11 @@ links its relevant code, CI, test, QA, security, benchmark, or decision evidence
 
 ## Phase 01 - Repository Bootstrap
 
-- [ ] Create the five-member Rust workspace with resolver 3, pinned
-  `rust-toolchain.toml`, and committed `Cargo.lock`.
+- [ ] Create the five-member Rust workspace with resolver 3, add the root
+  `rust-toolchain.toml`, and commit `Cargo.lock`.
 - [ ] Add minimal client/server entrypoints, shared logging, local `mise`
-  tasks, and the locked CI checks.
+  pins for tools outside the Rust toolchain, local tasks, and the locked CI
+  checks.
 - [ ] Pin reproducible Linux/Windows native dependency acquisition and compile
   both minimal targets.
 - [ ] Create and record the MIT `les-perissables-stories` repository

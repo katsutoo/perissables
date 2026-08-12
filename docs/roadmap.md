@@ -32,10 +32,11 @@ detail labeled final before its evidence gate.
 
 ### Phase 01 - Repository Bootstrap
 
-Create the five-member Rust workspace, pinned toolchain and lockfile, minimal
-client/server entrypoints, logging, CI, legal baseline, and local development
-tasks. Create the separate MIT `les-perissables-stories` repository and pin its
-relationship.
+Create the five-member Rust workspace, add the root pinned toolchain, commit the
+lockfile, and add minimal client/server entrypoints, logging, CI, legal baseline,
+and local development tasks. Keep Rust owned by `rust-toolchain.toml`; use
+`mise` only for tools outside the Rust toolchain and local task aliases. Create
+the separate MIT `les-perissables-stories` repository and pin its relationship.
 
 Run only bootstrap-relevant feasibility checks:
 

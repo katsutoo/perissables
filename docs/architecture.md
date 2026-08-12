@@ -181,7 +181,10 @@ snapshot cap, pragma set, or commit interval is final.
 
 ## Engineering Practices
 
-- Rust `1.97.1`, Edition 2024, virtual-workspace resolver 3.
+- Phase 01 adds a root `rust-toolchain.toml` that pins Rust `1.97.1` with
+  `rustfmt` and Clippy. `mise` will manage only tools outside that Rust
+  toolchain and local task aliases.
+- Edition 2024, virtual-workspace resolver 3.
 - Commit `Cargo.lock`; CI and release builds use `--locked`.
 - Prefer the standard library and concrete types until an abstraction has more
   than one useful consumer or implementation.

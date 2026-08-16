@@ -1,12 +1,12 @@
 # QA Plan
 
 Status: Normative release-behavior policy
-Owner: Project team
-Updated: 2026-08-11
+Owner: Sole developer
+Updated: 2026-08-16
 
 QA exercises the product through a supported shipped entrypoint. Internal state
-machines, parser matrices, and storage fault injection belong to automated
-tests. QA observes the user-visible consequences and durable effects.
+machines, parser matrices, and process-lifecycle fault injection belong to
+automated tests. QA observes user-visible consequences and session effects.
 
 ## Verdicts
 
@@ -41,11 +41,12 @@ and a stated protocol; a later pass does not erase it.
 
 | Target | Required environment |
 | --- | --- |
-| Linux | Frozen Ubuntu 24.04 LTS x86_64 image; `1280x720` and `1920x1080` |
+| Linux | Exact Phase 01-pinned Steam Linux Runtime/container and supported x86_64 host baseline; `1280x720` and `1920x1080` |
 | Windows | Frozen Windows 11 x86_64 build; `1280x720` and `1920x1080` |
 
-Record windowed/fullscreen mode, UI scale, GPU, and driver. Keyboard-only
-operation and every shipped UI variant are required. Other Linux distributions,
+Record the Linux runtime/container digest, host distribution, windowed/fullscreen
+mode, UI scale, GPU, and driver. Keyboard-only
+operation through the single shipped UI is required. Other Linux distributions,
 Steam Deck, controllers, and additional display modes are exploratory until
 added to the support contract.
 
@@ -56,23 +57,27 @@ added to the support contract.
    authoritative state or secret is stored locally.
 2. **Three-run loop.** Complete lobby -> selection -> ready/start -> story ->
    check -> combat -> summary -> lobby three times without stale state.
-3. **Presentation and accessibility.** Exercise all themes and UI variants at
-   required resolutions/scales with keyboard-only navigation, visible focus,
-   readable text, independent audio channels, and presentation fallbacks.
+3. **Presentation and accessibility.** Exercise the supermarket presentation
+   and single scalable UI at required resolutions/scales in all nine launch
+   locales, with keyboard-only navigation, visible focus, correct wrapping/font
+   fallback, independent audio channels, and presentation fallbacks.
 4. **Hosted convergence.** Complete deterministic 2-, 3-, and 4-player staging
-   runs; observe stable fifth-seat/server-capacity refusal without affecting
-   admitted players.
-5. **Reconnect.** Disconnect during world, story, and combat; exercise dropped
-   handoff response, acknowledged resync, takeover, token expiry, and no
-   duplicate visible action/audio event.
-6. **Supported recovery.** After Phase 11, restart cleanly and crash the isolated
-   staging process at declared user-visible points. Rejoin and verify behavior
-   matches the selected storage acknowledgement boundary. Internal storage
-   begin/write/commit/checkpoint matrices remain integration tests.
+   runs through private/friends Steam invites; verify automatic worst-latency
+   Railway region selection for same-area and cross-area parties, observe stable
+   fifth-seat and server-capacity refusal without affecting admitted players,
+   and confirm no public lobby browser or matchmaking is exposed.
+5. **Reconnect.** Disconnect or terminate the client during world, story, and
+   combat; use a fresh Steam ticket to reclaim the reserved seat, acknowledge
+   resync, exercise takeover, and confirm no duplicate visible action/audio
+   event.
+6. **Drain and run loss.** Exercise a clean drain, drain deadline, forced stop,
+   and isolated process crash at declared user-visible points. Existing sessions
+   and reserved-seat rejoin work while the owner drains; forced/crashed runs end
+   with the stable run-lost outcome and no false recovery claim.
 7. **Trust boundaries.** Exercise invalid/expired Steam proof, wrong version or
-   pack identity, oversized traffic, and valid/invalid Tier 1 import through
-   normal user entrypoints. Confirm stable public errors, no leaked internals,
-   no external fetch, and no residue.
+   built-in content identity, and oversized traffic through normal user
+   entrypoints. Confirm stable public errors, no leaked internals, and no
+   external fetch.
 8. **Final package and rollback.** On exact Phase 13 candidates, inspect package
    contents, prove development identity/debug paths and secrets are absent,
    launch both targets from clean caches, verify signatures/checksums/depot
@@ -85,22 +90,22 @@ environments are separate diagnostic artifacts with their own digest.
 ## Operations Oracles
 
 - `/healthz` reports process liveness only.
-- `/readyz` remains false until required initialization and selected storage
-  recovery are complete, and becomes false before graceful drain.
+- `/readyz` remains false until built-in content and required initialization
+  complete, and becomes false before graceful drain.
 - Capacity exhaustion rejects new admission but does not make healthy existing
   sessions or reserved-seat rejoin unready.
-- Shutdown stops admission, preserves the selected durable boundary, awaits
-  owned work within its measured deadline, and does not claim a clean close
+- Shutdown stops admission, preserves live sessions through its measured drain
+  deadline, awaits owned work, and does not claim a clean close or recovered run
   after forced termination.
 - Public errors are stable and redacted; internal logs retain useful structured
   context without credentials or personal data.
 
 ## Severity And Stages
 
-- `Blocker`: authority/data corruption, credential exposure, universal startup
+- `Blocker`: authority corruption, credential exposure, universal startup
   failure, or no safe workaround.
 - `Critical`: a major supported journey is unavailable, cross-player authority
-  fails, or a repeatable crash/recovery failure occurs.
+  fails, or repeatable drain/run-loss behavior violates the contract.
 - `Major`/`Minor`: degraded behavior with a safe workaround or limited
   presentation impact.
 

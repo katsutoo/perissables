@@ -21,7 +21,7 @@ Example story pack:
 
 Example party:
 
-- Banana Rogue: high agility, slippery utility, cowardly flavor text
+- Banana Rogue: high Dexterity, slippery utility, cowardly flavor text
 - Canned Beans Paladin: tanky, loud, righteous, probably dented
 - Leek Bard: support spells, morale boosts, and bad vegetable puns
 - Fish Sticks Mage: risky burst damage and freezer-themed magic
@@ -29,16 +29,19 @@ Example party:
 One run should feel like this:
 
 1. Players meet in lobby and lock in premade characters.
-2. The group enters a short story with a distinct map and theme.
-3. They move through the store, trigger events, and make branching choices.
+2. The group enters the handcrafted supermarket story.
+3. They move through the store and storage-room area, trigger events, and make
+   choices along one `35-45` minute route.
 4. Checks resolve through the shared dice system.
 5. Encounters switch into a compact turn-based combat screen.
-6. The party either completes the run or dies trying, then returns to lobby.
+6. Every surviving route reaches the boss.
+7. The party either wins or dies trying, then returns to lobby.
 
 ## Player Experience Goals
 
 - Fast onboarding: pick a character and start immediately.
-- Strong replayability: swap stories, themes, and party combinations without changing engine code.
+- Replayability through party combinations, choices, checks, and dice outcomes
+  within one handcrafted route.
 - High readability: simple top-down exploration and compact combat UI.
 - Social comedy: funny characters, bad luck, and party chaos generate the stories players retell.
 - Lethal but short runs: failure is part of the joke, not a multi-hour punishment.
@@ -48,26 +51,19 @@ One run should feel like this:
 - 2D top-down pixel art during exploration, similar in readability to classic Pokemon or early Zelda.
 - Separate combat presentation with party and enemies facing off in a dedicated battle view.
 - Minimal interface surface: lobby, world scene, dialog/choice box, combat actions, HP bars, dice feedback, and tiny inventory slots.
-- Theme swaps should change the atmosphere of a run without changing the underlying rules.
+- The supermarket and its storage-room area share rules while using distinct
+  presentation and atmosphere.
 
-## Story And Theme Model
+## Story and presentation model
 
-Stories are data, not code. A story file defines:
+The built-in story is data, not code. Its files define the map reference,
+triggerable events, choices, checks, encounters, and supermarket presentation.
+The storage room is an area within the same map and theme, not a second content
+pack.
 
-- map reference
-- triggerable events
-- branching choices
-- checks
-- encounters
-- theme selection
-
-That allows the same runtime to support very different tones:
-
-- `supermarket`: fluorescent aisles, carts, checkout chaos
-- `garden`: softer paths, overgrown produce, compost enemies
-- `storage_room`: cramped backrooms, pallets, cold lighting, heavier survival tone
-
-The core rule is simple: the engine stays shared, while flavor comes from data packs.
+The engine stays shared while the one release story remains editable through
+validated repository-owned data. Creator packs and additional themes are
+post-MVP.
 
 ## Combat And Dice
 
@@ -82,4 +78,7 @@ The game uses a d100-style system with intentionally unusual critical extremes f
 - Steam lobbies and invites help players find/join sessions, but gameplay authority stays on the server.
 - Steam-first distribution is the expected path.
 
-Business-facing release notes and pricing decisions stay out of these docs; they are tracked separately when needed.
+Exact pricing and launch choices are recorded during Phase 12 rather than
+preselected here. The roadmap still gates the Steam store assets, disclosures,
+support/privacy contacts, operating cost, and shutdown plan required for
+release.

@@ -1,18 +1,18 @@
 # Benchmark Plan
 
 Status: Normative performance experiment policy
-Owner: Project team
-Updated: 2026-08-11
+Owner: Sole developer
+Updated: 2026-08-16
 
 Performance is established by production-mode measurements, not by contract
 detail or code inspection. Product targets come from `docs/mvp-contract.md`.
 
 ## Decisions Supported
 
-1. **Phase 10 storage decision:** choose the store, state representation,
-   durability boundary, commit cadence, and operational budgets.
-2. **Phase 12 release capacity:** determine whether the production-shaped server
-   meets the session/player, latency, reliability, and headroom goals.
+1. **Phase 10 regional deployment and drain:** choose the Railway regional
+   topology, session routing, drain deadline, and rollback procedure.
+2. **Phase 12 capacity measurement:** determine instance sizing, admission
+   limits, scaling needs, latency, reliability, and headroom.
 3. **Phase 12 client gate:** calibrate the reference machine and verify the 60
    FPS experience for frozen gameplay scenes.
 4. **Phase 13 final validation:** rerun applicable gates against exact final
@@ -28,7 +28,7 @@ numbers are not release claims.
 - Record Git SHA/dirty state, artifact digests, commands, tool versions,
   environment, workload version/checksum, duration, operations, errors, and raw
   result location.
-- Separate warmup, measured work, setup, and recovery.
+- Separate warmup, measured work, setup, and drain/boundary work.
 - Report independent runs in addition to operation samples.
 - Randomize or interleave baseline/candidate order.
 - Preserve timeouts, late starts, dropped work, and errors. Faster incorrect
@@ -37,49 +37,43 @@ numbers are not release claims.
   and before candidate comparison.
 - Never average percentiles.
 
-## Phase 10 Storage Spike
+## Phase 10 regional deployment and drain spike
 
 ### Question
 
-Which mature storage design gives the required recovery semantics with the
-lowest operational and implementation cost?
-
-At minimum compare bundled SQLite on the actual Railway volume with managed
-PostgreSQL if SQLite misses a gate. Evaluate full snapshots, bounded
-deltas/checkpoints, and candidate durability boundaries using implemented
-session DTOs rather than invented byte blobs.
+What is the smallest Railway-only topology within the entry-level subscription
+budget that gives worldwide parties acceptable nearby latency to one owning
+in-memory session while keeping drain and rollback simple for one developer?
 
 ### Workloads
 
-- Typical lobby, world, story, combat, and summary states.
-- Maximum valid state generated through public rules/schema.
-- One changing session, expected concurrent load, and the release capacity goal.
-- Semantic actions, continuous movement, disconnect/rejoin handoff, and session
-  end.
-- Clean shutdown, immediate crash after acknowledged work, crash during a write,
-  recovery, checkpoint/maintenance, and storage-unavailable behavior.
+- Create/join and latency probes worldwide against an initial
+  Americas/Europe/Asia candidate topology.
+- Same-area and cross-area parties through lobby, world, vote, combat, and
+  summary traffic.
+- Controlled latency-impairment playtests that freeze the highest acceptable
+  cross-area movement/input latency before choosing the region set.
+- Client disconnect/rejoin routed back to the owning live process.
+- Mark one process unready, refuse new admission, finish short and full-length
+  sessions, and expire the drain deadline.
+- Forced stop, process crash, regional outage, replacement deployment, and
+  rollback with the documented run-lost behavior.
 
-### Metrics And Decision Record
+### Metrics and decision record
 
-Record p50/p95/p99/max commit and acknowledgement latency, achieved operations/s,
-bytes written, write amplification, fsyncs, CPU, peak RSS, volume growth,
-recovery duration, correctness/errors, backup/restore behavior, and operator
-steps.
+Record p50/p95/p99/max scheduled-send latency by source/host region, route and
+rejoin correctness, drain duration, sessions completed/lost, admission results,
+CPU, peak RSS, network use, deployment duration, and operator steps.
 
-The decision must state:
+The decision states the smallest Railway region set within the entry-level
+budget, automatic worst-latency/median-latency placement, owning-process routing,
+measured drain deadline, rollback procedure, headroom/uncertainty, rejected
+alternatives, and the smallest workload that would invalidate it.
 
-- production environment and independent run count;
-- selected store, schema/state representation, and acknowledgement boundary;
-- measured batching/cadence, queue, storage, and recovery budgets;
-- headroom and uncertainty;
-- rejected alternatives; and
-- the smallest workload that would invalidate the decision.
+## Server capacity workload
 
-A tiny local database or debug binary cannot establish this gate.
-
-## Server Release Workload
-
-The final capacity workload is open-loop:
+The capacity workload is open-loop. Its single-instance maximum is a measurement
+point, not a launch concurrency promise:
 
 - target `64` sessions with `4` authenticated clients each;
 - up to `20` scheduled gameplay inputs/client/s;
@@ -93,15 +87,20 @@ The Phase 12 fixture freezes exact seeds, traces, expected outcomes/reasons,
 encoded-size distributions, and operation counts. Lower load points have
 complete schedules; they are not truncated high-load traces.
 
-Authentication setup occurs outside the measured interval using project-owned
-authorized Steam test accounts. After the production limiter is implemented,
-derive and provision the real source-IP topology needed to remain within every
-source/session/identity bucket. Header spoofing, auth bypasses, one identity
-across seats, and load against Steam itself are forbidden. Missing accounts,
-authorized staging, or real limiter-keyed routes makes the hosted benchmark
-`BLOCKED`.
+Steam authentication is qualified separately, outside capacity timing, with a
+small pool of project-owned authorized test accounts. The capacity workload uses
+synthetic identities issued only by an isolated non-release benchmark identity
+adapter; that adapter cannot compile into release features/packages. The driver
+uses a realistic identity/session distribution and the same post-auth session
+and rate-limit paths as production without sending load to Steam.
 
-### Server Gates
+Header spoofing, one identity reused across seats, and load against Steam itself
+are forbidden. Missing authorized Steam staging makes the Steam authentication
+check `BLOCKED`; it does not block an otherwise valid isolated capacity
+measurement. Missing the production limiter path or release-adapter absence proof
+makes the capacity gate `BLOCKED`.
+
+### Measurement validity and targets
 
 - Processing latency p95 below `100 ms`, p99 below `200 ms`.
 - Same-region scheduled-send-to-receive p95 below `150 ms`, p99 below
@@ -113,22 +112,23 @@ authorized staging, or real limiter-keyed routes makes the hosted benchmark
 - Sustained CPU, peak RSS, volume, and network use retain at least `30%`
   measured allocation headroom.
 - p99 bounded-queue occupancy remains below the frozen Phase 12 headroom gate.
-- Storage commit/recovery gates use the Phase 10 decision rather than obsolete
-  pre-spike assumptions.
+- Missing the `64`-session resource target informs instance sizing, scaling, or
+  admission limits; it does not permit correctness loss or create an unsupported
+  concurrency claim.
 
 Every gated outcome class needs enough samples for its reported percentile;
 rare classes are reported without a fabricated p99.
 
-## Recovery And Boundary Workloads
+## Drain and boundary workloads
 
 Run separately from steady state:
 
-- clean restart and crash recovery at the selected acknowledgement boundary;
-- all-client reconnect spread within real limiter budgets;
+- clean drain, drain deadline, forced stop, process crash, and stable run loss;
+- all-client reconnect spread within real limiter budgets and owning-process
+  routing;
 - one backpressured client per session while healthy clients continue;
-- selected-store maintenance/checkpoint behavior;
 - maximum valid state, event, result, and resync payloads; and
-- storage full/unavailable behavior through the safe test mechanism defined by
+- regional endpoint loss and rollback through the safe mechanism defined by
   Phase 10.
 
 Each workload declares setup, stop conditions, expected state/checksum,
@@ -167,11 +167,11 @@ correctness workload rather than mixing a forced stall into normal frame data.
 | Load | offered/achieved ops/s, late starts, ticks/broadcasts |
 | Reliability | outcomes, errors, timeouts, disconnects, dropped/coalesced work |
 | Resources | CPU user/system, peak RSS, allocations when useful |
-| I/O | database bytes/fsyncs, volume growth, network ingress/egress |
+| I/O | Network ingress/egress by region and route |
 | Queues | occupancy distribution, refusal/overflow/coalescing |
 | Client | presentation/update intervals, missed refreshes, CPU/RSS/GPU |
 | Artifact | executable/package compressed and uncompressed size |
-| Startup | cold start, process-to-ready, restored sessions |
+| Startup | Cold start, process-to-ready, drain, and replacement deployment |
 
 ## Harness And Artifacts
 

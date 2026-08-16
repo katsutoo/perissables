@@ -2,14 +2,14 @@
 
 Authority: product and compatibility requirements live in
 `docs/mvp-contract.md`. This document explains the intended structure and the
-reasoning behind it. Storage mechanisms and measured capacity budgets remain
+reasoning behind it. Regional deployment and measured capacity budgets remain
 provisional until their named decision gates pass.
 
 ## Architecture Goals
 
 - Exercise the real client/server boundary from the first playable slice.
 - Keep all gameplay rules headless, deterministic, and server-authoritative.
-- Keep stories, characters, and themes data-driven.
+- Keep the story, characters, enemies, and supermarket presentation data-driven.
 - Prefer small, explicit modules and bounded resources.
 - Lock implementation details only after evidence makes the trade-off clear.
 
@@ -21,28 +21,23 @@ provisional until their named decision gates pass.
 | Server | Rust + `axum` + `tower` + `tokio` | Sessions, authority, health, networking |
 | Shared rules | Headless Rust crate | Story, dice, combat, character, and run state machines |
 | Protocol | `serde` + `serde_json` over WebSockets | Versioned intents, views, events, and errors |
-| Content | JSON + TMX + validator crate | Built-in and creator-authored declarative data |
-| Persistence | Evidence-gated in Phase 10 | Durable sessions after a measured SQLite/Postgres decision |
-| Hosting | Railway | Staging and production server environments |
+| Content | JSON + TMX validated by `game_core` | Immutable built-in declarative data |
+| Session state | Server memory | Active lobbies and runs; no database or long-term save |
+| Hosting | Railway | Regional staging and production server environments |
 | Distribution | Steam | Ownership, lobbies/invites, and Linux/Windows depots |
-
-The current storage candidate is bundled SQLite on a Railway volume. It is not
-an architecture lock. Phase 10 measures it against the actual state shape and
-deployment environment before the project selects SQLite, managed PostgreSQL,
-or a different mature transactional store.
 
 ## System Shape
 
 ```text
-[Validated story/theme/character data]
+[Validated built-in story/character/enemy data]
                   |
                   v
         [Headless game_core]
                   |
                   v
        [Authoritative server]
-          |             |
-   versioned views   persistence adapter
+          |
+   versioned views
           |
        WebSocket
           |
@@ -99,8 +94,8 @@ crates/
       router.rs
       session/
       netcode/
-      persistence/
       identity/
+      drain.rs
   game_core/
     src/
       game/
@@ -109,7 +104,7 @@ crates/
       character/
       item/
       dice/
-      save/
+      content/
   shared/
     src/
       protocol/
@@ -129,8 +124,10 @@ Workspace members are `client`, `server`, `game_core`, `shared`, and
 Dependency direction is one-way:
 
 - `shared` owns protocol DTOs, IDs, and common logging setup.
-- `game_core` depends on `shared` and the pinned MIT pack crate.
-- `client` and `server` depend on `shared` and `game_core`.
+- `game_core` depends on `shared` and owns pure built-in content validation.
+- `server` depends on `shared` and `game_core`.
+- `client` depends on `shared` only and renders authoritative views; it does not
+  link gameplay rules.
 - `integration_tests` may depend on every workspace crate.
 
 Reverse dependencies and cycles are forbidden.
@@ -144,7 +141,7 @@ process-global access.
   start-run entropy.
 - Randomness and time are injected.
 - Operations return new revisions plus stable events/results.
-- Persistence DTOs and pure migrators may live here; storage I/O may not.
+- Built-in content DTOs and pure validators live here; storage I/O does not.
 - Tests can replay the same transcript without a renderer or socket.
 
 ## Runtime Ownership
@@ -158,26 +155,17 @@ process-global access.
 - `unsafe` is forbidden in domain crates. Adapter unsafe blocks require a
   local `SAFETY` explanation and tests for lifetime/thread-affinity contracts.
 
-## Persistence Decision Gate
+## In-memory sessions and deployment drain
 
-Phase 10 builds a production-shaped spike after representative state DTOs and
-network behavior exist. The decision compares at least:
+One session owner holds one authoritative lobby/run in memory. There is no
+persistence adapter or database in MVP.
 
-- bundled SQLite on the actual Railway volume;
-- managed PostgreSQL when SQLite cannot meet the gates;
-- full snapshots versus bounded deltas/checkpoints;
-- durability at every acknowledged action versus semantic-boundary durability;
-- commit cadence, write amplification, recovery time, and operational burden.
-
-The spike covers typical and maximum valid states, clean restart, crash recovery,
-checkpoint behavior, concurrent sessions, and storage failure. It records
-latency distributions, throughput, bytes written, fsyncs, CPU, peak RSS, and
-recovery correctness.
-
-Only the selected design is then added to `docs/mvp-contract.md`, including its
-schema, acknowledgement boundary, queue/cadence budgets, and rollback rules.
-Until that decision, no document may claim that a particular queue size,
-snapshot cap, pragma set, or commit interval is final.
+A deploy marks the process unready, refuses new admission, and lets existing
+sessions finish within a bounded Phase 10-measured drain window. Rejoin remains
+available to reserved seats while that process lives. A process crash or forced
+stop can end active runs and returns clients through the stable run-lost path.
+Regional routing must not send a reserved-seat rejoin to a replacement process
+that cannot own the in-memory session.
 
 ## Engineering Practices
 
@@ -191,8 +179,9 @@ snapshot cap, pragma set, or commit interval is final.
 - Use typed errors at reusable boundaries and contextual errors in executable
   orchestration. Recoverable input, I/O, and dependency failures do not panic.
 - Use structured `tracing` fields without secrets or personal data.
-- Keep transport, rules, presentation, and persistence separable at their real
-  ownership boundaries; do not create layers solely to match a diagram.
+- Keep transport, rules, presentation, content validation, and process draining
+  separable at their real ownership boundaries; do not create layers solely to
+  match a diagram.
 - Add tests with the behavior that introduces them. Profile only measured hot
   paths.
 - Follow `docs/test-strategy.md`, `docs/qa-plan.md`,

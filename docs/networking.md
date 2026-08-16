@@ -45,13 +45,19 @@ WebSockets fit the small co-op update model and the `axum`/`tokio` server.
 Production uses WSS through trusted environment endpoints. Steam lobby metadata
 contains discovery/compatibility data, never arbitrary endpoints or authority.
 
-JSON v1 prioritizes debuggability. The envelope carries type, protocol version,
-session/player IDs, per-direction transport sequence, and a typed payload.
-Gameplay inputs also carry persisted per-player order and a based-on revision.
+JSON v1 prioritizes debuggability. Before admission, authentication,
+create/join, and rejoin use the pre-session envelope defined by the contract.
+After identity/seat binding, session messages add server-issued session/player
+IDs. Every envelope carries a type, protocol version, per-direction transport
+sequence, and typed payload. Gameplay inputs also carry persisted per-player
+order and a based-on revision.
 
 Protocol rules:
 
 - DTO direction and unknown-field behavior are explicit.
+- Production supports one gameplay protocol version. Unsupported clients receive
+  `update_required` before admission; deployments drain admitted sessions before
+  removing that server version.
 - IDs are opaque and server-generated.
 - Every admitted expected input receives exactly one result.
 - Recipient projections expose no secret or other-player private state.
@@ -67,29 +73,33 @@ must know them.
 
 ## Identity
 
-Production join/rejoin validates Steam proof for the expected app and ownership.
-The server issues all session/player IDs and opaque rejoin tokens.
+Production join/rejoin validates a fresh Steam proof for the expected app and
+ownership. The server issues all session/player IDs.
 
-- Raw tickets/tokens are never logged or persisted.
-- Tokens are identity/session/player/generation-bound and digest-stored.
+- Raw Steam tickets are never logged or persisted.
+- A returning Steam identity may reclaim only its own reserved in-memory seat.
 - One player has at most one authoritative connection.
-- Rejoin rotates through an acknowledged handoff.
 - The client acknowledges recipient-specific resync before new gameplay input.
 - Stale takeover-close notifications cannot disconnect the replacement.
+- The client stores no rejoin bearer token locally.
 
 A local identity adapter supports deterministic development and tests before
 Steam staging is available. It cannot compile into release features/packages.
 
 ## Lifecycle And Recovery
 
-New seats join only a lobby; reserved seats may rejoin a non-ended session.
+Steam lobbies are private or friends-only and invite-based; there is no public
+browser or matchmaking. New seats join only a lobby; reserved seats may rejoin a
+non-ended session.
 Disconnect preserves a seat through bounded grace. Explicit lobby leave or
 expiry releases it.
 
-Before Phase 11, process restart may lose pre-release runs. Phase 10 selects the
-durability/acknowledgement design from measurements; Phase 11 implements it.
-Networking depends only on the persistence adapter's documented commit result,
-not on SQLite- or Postgres-specific behavior.
+Session state exists only in the owning server process. A graceful deploy marks
+that process unready, refuses new admission, and preserves existing connections
+and reserved-seat rejoin while sessions drain. A process crash or forced stop
+ends remaining runs; clients receive the stable run-lost outcome rather than a
+partial restore. Regional routing must keep rejoin traffic on the owning process
+while it lives.
 
 ## Slow And Failed Peers
 

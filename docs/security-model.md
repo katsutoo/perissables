@@ -1,112 +1,101 @@
-# Security Model
+# Security model
 
 Status: Normative game/runtime threat scope
-Owner: Project team
-Updated: 2026-08-11
+Owner: Sole developer
+Updated: 2026-08-16
 
 Product controls and compatibility behavior derive from
-`docs/mvp-contract.md`. This model covers the game client/server and local
-Tier 1 validation. A future community hub owns its own threat model.
+`docs/mvp-contract.md`. This model covers the shipped game client/server and
+built-in content. Creator content and a future community hub require a separate
+post-MVP threat model.
 
-## Assets And Objectives
+## Assets and objectives
 
 Protect authoritative run integrity, player/session identity, Steam tickets,
-rejoin tokens, hidden per-player state, local files, built-in content, service
-availability, release artifacts, and recovery data.
+hidden per-player state, local files, built-in content, service availability,
+release artifacts, and operator credentials.
 
-Prevent a client or pack from:
+Prevent a client from acting as another player, deciding authoritative outcomes,
+reading hidden state, replaying actions into invalid mutation, redirecting Steam
+proof to an untrusted endpoint, or consuming unbounded resources.
 
-- acting as another player or deciding authoritative outcomes;
-- reading hidden state or credentials;
-- replaying, reordering, or racing actions into invalid mutation;
-- redirecting credentials to an untrusted endpoint;
-- escaping pack storage/validation; or
-- consuming unbounded CPU, memory, disk, sockets, tasks, queues, or retries.
-
-## Threat Actors And Boundaries
+## Threat actors and boundaries
 
 - Unauthenticated internet clients may open connections and send malformed
   handshakes.
 - Authenticated players control their clients, messages, order, timing, and
   Steam lobby metadata.
-- Every community-pack byte remains hostile after prior validation.
-- Native decoders, Steamworks, `raylib`, the selected database, dependencies,
-  CI, Railway, Steam, and operator credentials are separate trust boundaries.
+- Steamworks, `raylib`, native decoders, dependencies, CI, Railway, Steam, and
+  operator credentials are separate trust boundaries.
 - Production and third-party services are not active-test targets without
   explicit authorization for the exact environment and actions.
 
-## Threat Register
+## Threat register
 
 | Threat | Required control | Verification | Residual risk |
 | --- | --- | --- | --- |
-| Player/session takeover | Steam app/ownership validation; identity/session/player/token-generation binding; digest-stored rotating tokens; one connection | Wrong identity/app/token/generation, replay, dropped handoff, takeover, and expiry tests | A compromised Steam account/device remains authoritative until revocation/expiry |
+| Player/session takeover | Fresh Steam app/ownership validation; identity/session/player binding; one connection | Wrong identity/app, replay, takeover, seat reclaim, and expiry tests | A compromised Steam account/device remains authoritative |
 | Client authority or hidden-state leak | Server-owned state machine; deny-by-default action checks; recipient views | 2/3/4-client transcripts and differential projection tests | New actions/projections require renewed review |
-| Development identity in release | Compile-time feature separation and package inspection | Release builds and final packages prove adapter/symbol/config absence | Build misconfiguration remains possible until CI/package checks run |
-| Malicious pack or parser escape | Strict archive/schema/path/resource bounds; disabled external resolution; killable sandboxed workers | Conformance, fuzz, and supported-OS escape/cleanup tests | Kernel/native decoder defects remain possible inside the sandbox |
-| Resource exhaustion | Bounded admission, messages, queues, tasks, retries, storage, parsing, and fan-out | Boundary tests and authorized capacity experiments | One instance may refuse legitimate spikes |
-| Persistence corruption or acknowledged-state loss | Phase 10 selected transactional design; explicit acknowledgement boundary; versioning; backup/rollback | Real-adapter integration faults plus clean/crash staging recovery | Whole-store/provider loss can require operator recovery |
+| Development identity in release | Compile-time feature separation and package inspection | Final packages prove adapter/symbol/config absence | Build misconfiguration remains possible until package checks run |
+| Resource exhaustion | Bounded admission, messages, queues, tasks, retries, parsing, and fan-out | Boundary tests and authorized capacity experiments | One region may refuse legitimate spikes |
+| Active-run loss | In-memory-only sessions; stable run-lost error; graceful drain | Clean drain, deadline, forced-stop, and crash tests | A process or regional outage can end active runs |
 | Native/dependency/build compromise | Pinned sources/checksums, minimal unsafe adapters, protected release jobs, advisories/licenses, reproducible artifacts | Wrapper tests/sanitizers where supported, dependency review, signature/provenance checks | Upstream compromise may evade known checks |
 
-Owners are assigned in phase issues/evidence. Accepted residual risk records an
-owner, rationale, review date, and release-owner approval.
+Accepted residual risk records an owner, rationale, review date, and release-owner
+approval.
 
-## Required Controls
+## Required controls
 
 - Connect only to trusted environment endpoints. Production uses normal
-  certificate-chain and hostname verification with no user bypass or plaintext
+  certificate-chain and hostname verification with no bypass or plaintext
   fallback.
 - Steam lobby metadata is discovery data, never endpoint or gameplay authority.
 - Validate identity, authorization, phase, target, revision, sequence, rate, and
   resource bounds before state mutation.
-- Store bearer credentials only as long as required. Never log or persist raw
-  Steam tickets or rejoin tokens.
+- Keep Steam tickets only as long as validation requires. Never log or persist
+  them raw.
+- A fresh validated Steam identity can reclaim only its own reserved in-memory
+  seat.
 - Public errors expose stable codes, not parser internals, credentials, hidden
   state, or filesystem paths.
-- Every queue, task set, retry loop, allocation, parser, archive, decoded
-  resource, connection, and storage path has a justified bound before exposure.
+- Every queue, task set, retry loop, allocation, parser, decoded built-in
+  resource, connection, and drain path has a justified bound before exposure.
 - Trusted proxy configuration owns source attribution; forwarding headers from
   other peers are ignored.
-- Pack validation accepts only the documented regular-file archive subset,
-  rejects traversal/aliases/links/devices, disables XML external access, and
-  performs native/untrusted decoding only after the required OS sandbox is
-  installed.
-- Validation workers inherit no secrets or broad handles, have no network or
-  child-process capability, and are killed/reaped on timeout, cancellation, or
-  limit breach.
-- Release builds fail closed when a required supported-OS sandbox primitive is
-  unavailable. Test escape fixtures cannot compile into packages.
-- The selected persistence design keeps server-only state, versions formats,
-  uses explicit transactions/parameterized operations, bounds recovery, and
-  never reports uncommitted state as durable.
+- Built-in JSON/TMX parsing disables external entities, external resources, and
+  network access and enforces schema/resource bounds before session admission.
 - Long-lived tasks have explicit owners, cancellation, and joined outcomes.
 - Structured logs identify operations without message bodies, credentials, or
   personal data.
+- A draining process refuses new admission before shutdown. A forced stop never
+  claims a clean drain or recovered run.
 
-## Supply Chain And Release
+## Supply chain and release
 
-- Pin Rust, `Cargo.lock`, CI tools/actions, Git revisions, native
-  libraries/SDKs, build images, and the selected storage dependency.
+- Pin Rust, `Cargo.lock`, CI tools/actions, Git revisions, native libraries/SDKs,
+  build images, and the Steam Linux Runtime/container.
 - Review dependency licenses, sources, and advisories; scanner output is a lead,
   not proof of reachability.
 - Run a local history-aware secret scan before public release. Never test a
-  discovered credential; report its type/location and rotate through an
-  authorized process.
+  discovered credential; rotate it through an authorized process.
 - Signing keys are non-exportable and available only to protected release-tag
   workflows after artifact checksum approval.
-- Final packages contain no local identity adapter, debug credential, test
-  endpoint, developer character/action, secret, or unintended private symbol.
+- Final packages contain no local/benchmark identity adapter, debug credential,
+  test endpoint, developer character/action, secret, or unintended private
+  symbol.
 
-## Privacy And Retention
+## Privacy and retention
 
-- No optional gameplay telemetry or voice recording by default.
+- No optional gameplay telemetry, voice recording, or voice playback ships by
+  default.
 - Use only gameplay-required platform/session identifiers.
 - Crash upload, if added, is informed, opt-in, bounded, and redacted.
-- Logs, backups, sessions, crash data, and raw QA/benchmark evidence have
-  documented finite retention before production.
+- Logs, sessions, crash data, and raw QA/benchmark evidence have documented
+  finite retention before production.
 - Synthetic fixtures and redacted release summaries contain no credentials,
   account identifiers, or production records.
 
-## Verification And Reporting
+## Verification and reporting
 
 - Security tests use local or explicitly authorized isolated staging with
   synthetic/project-controlled data.
@@ -115,8 +104,7 @@ owner, rationale, review date, and release-owner approval.
 - Stop once a risk is established. Do not access another party's data, use a
   discovered credential, load-test a third party, or suppress a credible issue
   because exploitation is unsafe.
-- Findings record location, preconditions, impact, evidence, technical
-  severity, remediation priority, confidence, fix, validation, and residual
-  risk.
+- Findings record location, preconditions, impact, evidence, severity,
+  remediation priority, confidence, fix, validation, and residual risk.
 - A clean review or scan is not a claim that an unimplemented or untested system
   is secure.

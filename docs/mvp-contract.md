@@ -1,8 +1,8 @@
 # Les Périssables MVP Contract
 
 Status: Ready for Phase 01 implementation
-Owner: Project team
-Updated: 2026-08-12
+Owner: Sole developer
+Updated: 2026-08-16
 
 This document is the source of truth for product, authority, compatibility, and
 release requirements. It intentionally does not pre-design every queue, storage
@@ -43,34 +43,63 @@ dice/combat events through one authoritative server.
 1. Native Linux and Windows client written in Rust with `raylib`.
 2. Authoritative Rust server using `axum`, `tower`, and `tokio`.
 3. Server-owned lobby, movement, story, dice, combat, inventory, and run state.
-4. JSON-driven stories and character/theme data; TMX maps.
+4. JSON-driven built-in stories and character/theme data; TMX maps.
 5. Premade characters, no builds or leveling.
 6. Compact turn-based combat with attack, spell, item, and pass.
 7. Run flow: lobby -> story/world/combat -> summary -> lobby.
-8. Three built-in themes: `supermarket`, `garden`, and `storage_room`.
-9. Event-driven ambience, music, SFX, and optional short voice barks.
-10. Keyboard-only operation and at least two behavior-identical built-in UI
-    variants.
-11. Steam ownership/authentication, lobbies/invites, and depot distribution.
-12. Safe local validation and single-player creator testing for reuse-only
-    Tier 1 packs.
+8. One supermarket theme, with the storage room as an area of its map.
+9. Event-driven ambience, music, and SFX without voice playback.
+10. One readable, scalable, keyboard-operable UI.
+11. Steam ownership/authentication, private/friends lobbies, invites, and depot
+    distribution.
 
 ### Out
 
-- Character builds, leveling, skill trees, or deep equipment.
-- Procedural maps, voice chat, scripting, or arbitrary pack code.
+- Character builds, leveling, skill trees, deep equipment, account progression,
+  or long-term saves.
+- Normal solo play; one-player execution exists only in development and
+  automated tests.
+- Procedural maps, voice chat, voice barks, scripting, or arbitrary content
+  code.
+- Additional themes, UI skins/variants, creator tooling, local pack import,
+  `storycheck`, community packs, and custom maps/media.
 - Mobile, browser, console, or macOS releases.
-- Steam achievements.
-- Hosted community-pack multiplayer.
-- Public UGC hub, accounts, comments, likes, moderation, publication signing,
-  custom maps/media, and Tier 2 packs.
+- Public lobby browsing, matchmaking, mid-run kicking, or Steam achievements.
+- Public UGC hub, accounts, comments, likes, moderation, and publication
+  signing.
+- Durable recovery of an active run after a server process crash.
 
 Post-MVP features do not reserve implementation detail in this contract.
+
+## Release Content Minimum
+
+| Content | Release minimum |
+| --- | --- |
+| Built-in story | One handcrafted `35-45` minute route |
+| World map | One supermarket TMX map with a storage-room area |
+| Playable characters | Four |
+| Normal enemy types | Five |
+| Bosses | One mandatory boss; no surviving route can bypass it |
+| Character spells | Eight total |
+| Items | Eight total |
+| Combat encounters | Two normal encounters and one boss encounter per run |
+| Checks | Four to six presented per run |
+| Major choices | Three presented per run |
+| Dialogue/choice beats | `25-40` presented per run |
+| Music | Four tracks: lobby, exploration, combat, and boss |
+| Ambience | Two loops |
+| SFX | At least twenty distinct effects |
+| Voice | None |
+
+Choices may alter local events, checks, rewards, dialogue, and encounter details,
+but they do not create substantially different routes or bypass the boss.
 
 ## Locked Gameplay Rules
 
 ### Dice
 
+- The six character stats are Strength, Perception, Chance, Dexterity, Charisma,
+  and Education.
 - Character stats are integers in `5..=70`.
 - Internal rolls are equiprobable integers in `0..=100`.
 - `0` displays as `000` and is critical success.
@@ -80,35 +109,86 @@ Post-MVP features do not reserve implementation detail in this contract.
   critical is `(stat + 1) / 101`.
 
 Production randomness comes from a versioned CSPRNG state supplied explicitly to
-headless game rules. Clients and packs never seed it. Rejected actions consume no
+headless game rules. Clients and content never seed it. Rejected actions consume no
 randomness. Tests use fixed known states, not frequency assertions.
 
-### Story
+### World And Interaction
+
+- Exploration uses continuous cardinal movement without diagonal movement.
+- The server owns movement speed, collision, and final position.
+- An interaction targets the valid object directly in front of the character
+  within one tile.
+
+### Story And Voting
 
 - Stories are declarative state machines; no story-specific runtime code.
 - Node kinds are dialogue, check, encounter, transition, return, and end.
 - Checks have required success/failure branches; missing critical branches fall
   back to the corresponding normal branch while retaining critical feedback.
 - Effects are limited to flag and item operations supported by the engine.
-- Choices are resolved by authoritative votes. Each eligible player has one
-  replaceable vote; ties use the lowest lexical player ID among tied voters.
+- At run start, the server uses the run CSPRNG to choose one leader uniformly
+  from the occupied party.
+- Connected living players have one replaceable vote. Dead and disconnected
+  players cannot vote.
+- A vote remains open for `45 seconds`. If the connected living leader voted
+  for one of the tied top choices, that choice wins as though the leader's vote
+  counted twice. Otherwise, the choice whose tied voter has the lowest lexical
+  player ID wins.
+- A disconnected leader keeps the role through the seat-rejoin grace window but
+  cannot break ties while absent. A connected dead leader may transfer
+  leadership to one connected living player. If the leader explicitly leaves or
+  the seat expires, the server selects a replacement uniformly from connected
+  living players using the run CSPRNG. Leadership changes are authoritative
+  events.
 - Automatic transition chains, events, collections, and text are bounded by the
   versioned content schema.
 
 ### Combat And Inventory
 
-- Turn order is descending agility, then lexical actor ID.
+- Characters and enemies have fixed positive HP values supplied by validated
+  built-in content; HP is not derived from the six stats.
+- Turn order is descending Dexterity, then lexical actor ID.
 - Every turn allows exactly one attack, spell, item, or pass.
-- Attack checks strength. Normal success deals
-  `max(1, floor(strength / 5))`; critical success doubles it; failures deal
+- Combat has no grid, range, or positional movement. An action chooses from its
+  currently valid targets.
+- Attack checks Strength. Normal success deals
+  `max(1, floor(Strength / 5))`; critical success doubles it; failures deal
   zero.
-- Spells and items use immutable engine-owned effect definitions referenced by
-  content IDs. Packs compose known behavior; they do not define code.
-- Characters have four inventory slots.
-- Dead characters leave only server-approved loot; a corpse exposes at most two
-  eligible items to a reachable living player.
+- Every spell declares its check stat, engine-owned effect ID, target type, and
+  per-encounter charges. Player, normal-enemy, and boss spells all roll checks;
+  healing and support spells can fail. Casting always consumes the turn and one
+  charge.
+- On normal success, the spell applies its content-defined magnitude. Critical
+  success doubles direct damage, healing, and check-modifier magnitude; a
+  critical guard protects against the next two hits instead of one.
+- On normal failure, the spell has no effect. On critical failure, it still
+  consumes the charge and redirects by effect polarity using the run CSPRNG:
+  direct damage or a penalty targets a uniformly random living member of the
+  caster's side, including the caster; healing, guard, or a bonus targets a
+  uniformly random living opponent. If no redirected target exists, the spell
+  has no effect.
+- Direct damage and healing use a fixed content-defined amount, with healing
+  capped at maximum HP. Guard changes the next incoming positive damage to
+  `max(1, floor(damage / 2))`, then expires. A next-check bonus or
+  penalty adds or subtracts its content-defined amount once; the modified check
+  target is clamped to `0..=100`.
+- Content composes these five known effects and cannot define code.
+- Enemies do not use an AI subsystem. On their turn, the server uses the run
+  CSPRNG to choose uniformly from legal actions in their kit, then uniformly
+  from targets valid for that action. Enemy kits may contain only spells and do
+  not require a basic attack. With no legal action, they pass.
+- Characters have four inventory slots. Items come from story rewards and
+  combat loot and are consumed on use.
+- Dead players spectate. They cannot act or vote and cannot be targeted by
+  actions that require a living target.
+- After combat, a corpse exposes at most two server-approved eligible items to
+  the living party; no world-distance or combat-position test applies. For each
+  item, connected living players cast one replaceable vote for an eligible
+  living recipient with a free slot. The leader tie rule and lexical fallback
+  apply. An unassigned item disappears when the `45 second` loot vote closes.
+- A player combat turn lasts `30 seconds`, then becomes an authoritative pass.
 - Combat ends on enemy defeat, party wipe, or a bounded engine limit. Invalid
-  actions do not mutate gameplay state or consume a turn.
+  actions do not mutate gameplay state, consume randomness, or consume a turn.
 
 ## Runtime Targets And Safety Budgets
 
@@ -126,21 +206,30 @@ Locked product targets:
 - Keyboard focus is always visible and at least two rendered pixels thick at
   supported UI scales.
 
-Initial release capacity goal:
+Initial capacity measurement point:
 
-- `64` active sessions and `256` occupied seats on one server instance.
+- Phase 12 measures `64` active sessions and `256` occupied seats on one server
+  instance; this is a benchmark point, not a launch concurrency promise.
 - Rejoin uses an existing seat reservation and remains possible when new
   admission is full.
-- Capacity is a Phase 12 measured release gate, not a claim about unbuilt code.
-  If the production shape cannot meet it with required headroom, the team
-  changes the deployment/capacity plan before release rather than weakening
-  correctness.
+- Results determine instance sizing, admission limits, and scaling. Release does
+  not claim unsupported concurrency from an unbuilt or unmeasured deployment.
 
 Initial latency goal under the frozen Phase 12 workload:
 
 - Server processing p95 below `100 ms`, p99 below `200 ms`.
 - Same-region scheduled-send-to-correlated-receive p95 below `150 ms`, p99
   below `300 ms`.
+
+Players may connect worldwide through Railway. Physical deployment in every
+geographic area is not required; nearby measured latency is the requirement. A
+party may span areas, but one server process in one region owns its in-memory
+session. Region selection automatically minimizes the party's worst measured
+latency, then median latency, then lexical region ID. Phase 10 tests an initial
+Americas/Europe/Asia topology and freezes the smallest Railway-only deployment
+that provides acceptable play within the entry-level subscription budget.
+Additional Railway regions follow observed player demand rather than launching
+speculatively.
 
 Client frame gates are calibrated on the named reference machine before
 candidate measurement. They require the 60 FPS target, a predeclared missed
@@ -151,7 +240,7 @@ measured.
 Playtest targets:
 
 - Median clean-account lobby-to-run start at or below `3 minutes`.
-- Median completed or failed run between `20` and `35 minutes`.
+- Median completed or failed run between `35` and `45 minutes`.
 - Phase 12 records consent, sample counts, abandoned sessions, medians, and
   uncertainty; no default telemetry is added.
 
@@ -171,9 +260,11 @@ local task aliases. Initial members are exactly:
 - `les-perissables-shared`
 - `les-perissables-integration-tests`
 
-`shared` owns protocol DTOs and IDs. `game_core` depends on `shared` and
-the pinned MIT pack crate. Client and server depend on both. Integration tests
-may depend on every member. Cycles and reverse dependencies are forbidden.
+`shared` owns protocol DTOs and IDs. `game_core` depends on `shared` and owns
+pure built-in content validation. The server depends on `shared` and `game_core`;
+the client depends on `shared` only and renders authoritative views without
+linking gameplay rules. Integration tests may depend on every member. Cycles and
+reverse dependencies are forbidden.
 
 ### Authority From The First Slice
 
@@ -191,8 +282,8 @@ development builds. Release features/packages must prove that it is absent.
 ### Async And Native Boundaries
 
 - Startup owns one supervised task tree.
-- Session, connection, heartbeat, identity-provider, and persistence work has
-  explicit ownership, cancellation, timeouts, and bounded concurrency.
+- Session, connection, heartbeat, identity-provider, and deployment-drain work
+  has explicit ownership, cancellation, timeouts, and bounded concurrency.
 - Dropping a task handle may not detach correctness-critical work.
 - Blocking native work never runs directly on Tokio workers.
 - `unsafe` is forbidden in domain crates. Native adapters expose safe owned
@@ -208,9 +299,17 @@ development builds. Release features/packages must prove that it is absent.
 - Steam lobby metadata is discovery only and cannot choose an arbitrary server
   endpoint.
 - JSON is the v1 gameplay encoding.
-- Every message has `type`, `protocol_version`, `session_id`,
-  `player_id`, per-direction transport `seq`, and a typed `payload`.
-- Unknown fields/types/directions and unsupported versions are rejected.
+- Before a seat is admitted, authentication, create, join, and rejoin messages
+  use a pre-session envelope containing `type`, `protocol_version`,
+  per-direction transport `seq`, and a typed `payload`. Claimed session/player
+  identifiers, when needed for rejoin, remain untrusted payload fields.
+- After the server binds an identity to a seat, every session message also has
+  server-issued `session_id` and `player_id` envelope fields.
+- Unknown fields/types/directions are rejected.
+- Production supports exactly one gameplay protocol version. Older/newer clients
+  receive a stable `update_required` error before admission and cannot mutate
+  state. Deployments drain admitted sessions before removing their server
+  version.
 - IDs are server-generated opaque values with at least 128 bits of CSPRNG
   entropy.
 
@@ -244,14 +343,14 @@ Initial wire safety ceilings:
 
 ### Identity And Rejoin
 
-- Production join/rejoin requires a Steam ticket validated for the expected app
-  and ownership before authority is granted.
-- Tickets and bearer tokens are never logged or persisted raw.
-- Rejoin tokens are opaque, random, identity/session/player-bound, digest-stored,
-  rotated on acknowledged handoff, and absolutely expiring.
+- Production join/rejoin requires a fresh Steam ticket validated for the
+  expected app and ownership before authority is granted.
+- Tickets are never logged or persisted raw, and the client stores no rejoin
+  bearer token locally.
+- A validated returning Steam identity may reclaim only its own reserved seat.
 - One player has at most one authoritative connection.
-- A disconnected seat remains reserved for an initial `10 minute` grace
-  window, bounded by an initial `4 hour` session/token lifetime.
+- A disconnected seat remains reserved for an initial `10 minute` grace window,
+  bounded by an initial `4 hour` in-memory session lifetime.
 - Rejoin receives a recipient-specific resync and acknowledges it before new
   gameplay input is accepted.
 - Production connections use the trusted environment endpoint allowlist with
@@ -261,9 +360,15 @@ Initial wire safety ceilings:
 
 States are `Lobby`, `Running`, `Summary`, and `Ended`.
 
+- Steam lobbies are private or friends-only and joinable by invite. MVP has no
+  public lobby browser or matchmaking.
 - New seats join only a lobby; reserved seats may rejoin non-ended states.
-- The lobby owner selects a story. All occupied seats must be connected, ready,
-  and use unique characters before start.
+- The lobby owner selects a story and may remove a seat only while the session
+  is in `Lobby`. There is no mid-run kick.
+- If the lobby owner disconnects, ownership transfers to the longest-connected
+  remaining player, then lexical player ID.
+- All occupied seats must be connected, ready, and use unique characters before
+  start.
 - Run completion or wipe enters summary.
 - Acknowledgement or bounded timeout returns remaining seats to a cleared lobby.
 - Explicit leave releases a lobby seat; socket loss preserves it through grace.
@@ -271,55 +376,31 @@ States are `Lobby`, `Running`, `Summary`, and `Ended`.
 - Combat turns and story votes have monotonic deadlines; all-disconnected runs
   pause gameplay deadlines but not absolute credential/session expiry.
 
-## Evidence-Gated Persistence
+## In-Memory Sessions And Draining
 
-Release-ready requires server-owned active runs to survive supported clean
-deploys and process crashes according to a documented acknowledgement boundary.
-The mechanism is not selected yet.
-
-Phase 10 must measure a production-shaped prototype using representative and
-maximum valid state on the actual Railway environment. It compares bundled
-SQLite with a mature managed transactional alternative when SQLite misses a
-gate, and evaluates:
-
-- full snapshots, deltas, and semantic checkpoints;
-- which acknowledged operations require immediate durability;
-- commit cadence and batching;
-- write amplification, fsync behavior, latency, CPU, memory, and volume use;
-- clean restart, crash recovery, corruption, backup, and rollback; and
-- operational simplicity for one developer.
-
-Non-negotiable persistence properties:
+MVP session and run state exists only in server memory. The game has no database,
+long-term save, or account progression.
 
 - Clients never submit authoritative save state.
-- Schema and save formats are explicitly versioned and migrated.
-- Raw Steam tickets and rejoin tokens are never persisted.
-- The store uses parameterized operations and explicit transaction boundaries.
-- Tokio workers never perform blocking storage calls.
-- Queues, retries, startup validation, artifacts, and recovery work are bounded.
-- An uncommitted transition is never reported as durable.
-- Corrupt or future state fails safely without being silently deleted.
-
-The Phase 10 decision updates this section with the chosen store, schema,
-durability/acknowledgement semantics, measured budgets, failure policy, and
-rollback contract before Phase 11 implementation begins.
-
-Before Phase 11, restart/deploy run loss is an explicit pre-release limitation.
+- A server process crash ends its active lobbies and runs. Reconnecting clients
+  receive a stable run-lost error and return to lobby rather than restoring
+  partial state.
+- A supported deployment first becomes unready, stops new lobby/session
+  admission, and lets admitted sessions finish within a bounded drain window.
+- Reserved-seat rejoin remains available while a draining process is alive.
+- The process exits cleanly after its sessions end or the drain deadline expires.
+  Forced termination may end remaining runs and must not be reported as a clean
+  drain.
+- Phase 10 measures and freezes the drain deadline, regional deployment shape,
+  and rollback procedure on Railway. It does not select a database.
 
 ## Content Contract
 
-### Repository Boundary
+All MVP content, schema code, validation, fixtures, and assets live in the
+proprietary `perissables` repository. There is no creator repository, public
+validator crate, archive importer, or runtime content download in MVP.
 
-- `perissables`: proprietary runtime, server, built-in content, and assets.
-- `les-perissables-stories`: MIT schema/validation crate, `storycheck` CLI,
-  conformance corpus, creator examples, and authoring documentation.
-
-The game, validator, and any future service use the same pinned release of the
-MIT pack crate. Production builds do not follow a moving Git branch.
-
-### Aggregate Packs
-
-One session uses one aggregate pack identity:
+One session uses the built-in aggregate content identity:
 
 - `pack_id`
 - SemVer `version`
@@ -327,53 +408,38 @@ One session uses one aggregate pack identity:
 - `content_schema_version`
 - `game_rules_version`
 
-Release-ready hosted multiplayer serves built-in packs from the immutable server
-artifact. Clients cannot upload a pack or make the game server fetch one.
+The server loads built-in content from its immutable release artifact. Clients
+cannot upload content, provide a URL, or make the server fetch content.
 
-Tier 1 local packs may contain stories and character compositions that reference
-the shipped identifier catalog. They cannot contain theme documents, maps,
-images, audio, scripts, or other custom members.
+Schema v1 defines strict story, character, theme, map-reference, and manifest
+DTOs with required known fields, duplicate-key rejection, portable lowercase
+identifiers/paths, explicit cross-reference and graph validation, bounded text
+and collections, canonical checksum fixtures, and exact positive/rejection
+vectors. TMX parsing disables external entities, external resources, and parser
+network access.
 
-Tier 2 custom maps/media and their publication/trust system are post-MVP and are
-not specified here.
-
-### Schema And Safety
-
-Schema v1 defines strict story, character, theme, and manifest DTOs with:
-
-- required known fields and duplicate-key rejection;
-- portable lowercase identifiers and paths;
-- explicit cross-reference and graph validation;
-- bounded text, collections, nesting, files, and decoded resources;
-- canonical checksum fixtures; and
-- exact positive/rejection conformance vectors.
-
-Exact parser/resource ceilings are frozen with the schema implementation after
-the corpus demonstrates typical, large, limit, and rejected inputs. Limits may
-tighten between pre-release schema revisions; they never expand silently in a
-released version.
-
-Community archives and every contained byte are hostile input. Validation:
-
-- accepts a minimal regular-file ZIP subset;
-- rejects traversal, links, devices, aliases, nested/encrypted archives, and
-  case/path ambiguity;
-- disables XML external entities/resources and parser network access;
-- inspects media bounds before allocation;
-- uses bounded, killable workers for native/untrusted decoding; and
-- fails closed if a release-required OS sandbox cannot be installed.
-
-The Linux and Windows sandbox profiles are qualified before Phase 08 exposes
-creator import. They are not a Phase 01 bootstrap gate.
+Exact parser and resource ceilings are frozen with typical, large, limit, and
+rejected built-in fixtures. Creator archives, custom assets, sandboxed decoding,
+public tooling, and publication/trust systems are designed only when post-MVP
+creator work begins.
 
 ## Presentation And Local Settings
 
-- Theme/UI skinning changes presentation only, never controls, hit targets,
-  focus order, authority, collision, or events.
-- Validated assets that fail at presentation time use bounded built-in
-  texture/SFX/silence/classic-UI fallbacks.
-- Missing required content or untrusted custom media rejects activation; it does
-  not fall back into unsafe loading.
+English is the source and fallback language. Launch locales are English (`en`),
+French (`fr`), Simplified Chinese (`zh-Hans`), Traditional Chinese (`zh-Hant`),
+Japanese (`ja`), Korean (`ko`), German (`de`), international Spanish (`es`), and
+Thai (`th`).
+
+- Every player-facing string is externalized and supports Unicode, wrapping,
+  locale-appropriate line breaking, and packaged font fallback without network
+  access.
+- Release text and store copy receive review from fluent credited collaborators
+  in every non-English launch locale.
+- The single UI and supermarket presentation never control authority,
+  collision, or events.
+- Built-in assets that fail at presentation time use bounded texture, SFX,
+  silence, and classic-UI fallbacks.
+- Missing required built-in content rejects activation.
 - Boot-critical fallback resources are package-integrity checked.
 
 Client settings contain only display, volumes, keybindings, accessibility, and
@@ -422,9 +488,8 @@ documented retention.
 - Phase 01 adds `rust-toolchain.toml` to own Rust, Cargo, `rustfmt`, and Clippy.
   `mise` is local convenience for other development tools and task aliases
   only; CI invokes the pinned tools directly rather than invoking `mise` tasks.
-- Native `raylib`, Steamworks, and the selected storage dependency are pinned
-  with acquisition, checksum, linkage, target, update, and license evidence
-  before their release use.
+- Native `raylib` and Steamworks dependencies are pinned with acquisition,
+  checksum, linkage, target, update, and license evidence before release use.
 
 Minimum CI after bootstrap:
 
@@ -454,11 +519,9 @@ Phase 13 release candidates exist.
   reason before acceptance. Routine new tests do not require a permanent
   test-only commit or evidence bundle.
 - Property and conformance tests cover broad parser/protocol/state invariants.
-- Integration tests own internal storage fault injection, migration, and crash
-  correctness.
+- Integration tests own session drain, forced-stop, and run-loss correctness.
 - QA exercises critical user journeys through the shipped entrypoint and
-  observes externally visible recovery; it does not duplicate internal fault
-  matrices.
+  observes externally visible drain and run-loss behavior.
 - Benchmarks use production-mode artifacts, frozen workloads, calibrated
   environments, raw results, independent runs, correctness/error counts, and
   predeclared gates that exceed measured noise.
@@ -483,23 +546,25 @@ Phase 13 release candidates exist.
   state.
 - Rejoin, replay rejection, heartbeat, capacity refusal, and slow-client
   behavior are bounded and tested.
-- All themes and UI variants preserve controls and authority.
-- Tier 1 local validation is safe on supported OS baselines.
-- Durable restart recovery is not required until Release-ready.
+- The supermarket presentation and single scalable UI preserve controls and
+  authority.
+- Built-in content meets the release minimum and passes schema validation.
 
 ### Release-ready
 
-- The Phase 10 storage decision is implemented and clean/crash recovery matches
-  its documented acknowledgement boundary.
+- The Phase 10 regional deployment, graceful drain, forced-stop, and rollback
+  behavior matches the measured operating contract.
 - Release QA passes on exact Linux/Windows package digests.
 - Calibrated client and server capacity/performance gates pass with no
   unexpected errors, dropped correctness work, or hidden saturation.
 - Steam ownership, lobbies/invites, depots, production deployment, signing,
-  rollback, legal terms, third-party notices, and asset provenance are complete.
+  rollback, store assets/disclosures, legal terms, privacy/support contacts,
+  third-party notices, asset provenance, and the operating-cost/shutdown plan are
+  complete.
 
 ## Change Control
 
 - Scope changes occur between phases and update affected milestones.
 - Evidence-gated details are locked only after their named decision record.
-- A released protocol/content/save/settings version never changes silently.
+- A released protocol/content/settings version never changes silently.
 - Features outside this contract stay in the post-MVP backlog.

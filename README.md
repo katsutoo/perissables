@@ -29,8 +29,7 @@ Outside pull requests are not accepted until a reviewed contribution policy that
 requires an appropriate written contributor agreement is published. Issues and
 non-code feedback remain welcome.
 
-## Community Content Boundary
+## Website
 
-The separate stories/specs repository (`les-perissables-stories`) is intended for
-MIT-licensed schemas, tooling, and creator examples. That MIT scope does not grant any rights to
-this runtime/engine repository.
+The public site presents the game, its changelog and news, and links to Steam.
+See [docs/site.md](docs/site.md).

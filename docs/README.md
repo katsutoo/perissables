@@ -7,11 +7,12 @@
    requirements.
 3. `docs/production.md` — screens, asset inventory, provenance, and non-code
    release deliverables.
-4. `docs/architecture.md` and `docs/networking.md` — implementation shape.
-5. `docs/content-packs.md` — data/engine and repository boundaries.
-6. `docs/test-strategy.md`, `docs/qa-plan.md`,
+4. `docs/site.md` — public marketing website scope.
+5. `docs/architecture.md` and `docs/networking.md` — implementation shape.
+6. `docs/content-packs.md` — data/engine and repository boundaries.
+7. `docs/test-strategy.md`, `docs/qa-plan.md`,
    `docs/security-model.md`, and `docs/benchmark-plan.md` — evidence.
-7. `docs/roadmap.md` and `docs/progress-tracker.md` — order and status.
+8. `docs/roadmap.md` and `docs/progress-tracker.md` — order and status.
 
 ## Authority
 
@@ -34,12 +35,9 @@ game-facing integration contracts.
 | Repository | Status | URL/pin |
 | --- | --- | --- |
 | `perissables` | Current proprietary game/runtime, schema, built-in content, and assets | [GitHub](https://github.com/nuggocto/perissables) |
-| `les-perissables-hub` | Post-MVP; not specified or reviewed | Not assigned |
 
-Creator tooling and a separate schema repository are post-MVP and do not exist
-yet. A future hub owns its application, identity, storage, moderation, security,
-QA, and operations documentation. No game-facing creator compatibility interface
-is reserved before that work begins.
+The public website is a static marketing page owned by this repository
+(`docs/site.md`).
 
 Update this table in the same change that creates or repins a related
 repository. Do not claim an uncreated repository was reviewed.

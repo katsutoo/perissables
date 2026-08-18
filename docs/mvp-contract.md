@@ -61,15 +61,12 @@ dice/combat events through one authoritative server.
   automated tests.
 - Procedural maps, voice chat, voice barks, scripting, or arbitrary content
   code.
-- Additional themes, UI skins/variants, creator tooling, local pack import,
-  `storycheck`, community packs, and custom maps/media.
+- Additional themes and UI skins/variants.
 - Mobile, browser, console, or macOS releases.
 - Public lobby browsing, matchmaking, mid-run kicking, or Steam achievements.
-- Public UGC hub, accounts, comments, likes, moderation, and publication
-  signing.
 - Durable recovery of an active run after a server process crash.
 
-Post-MVP features do not reserve implementation detail in this contract.
+Excluded features do not reserve implementation detail in this contract.
 
 ## Release Content Minimum
 
@@ -396,9 +393,8 @@ long-term save, or account progression.
 
 ## Content Contract
 
-All MVP content, schema code, validation, fixtures, and assets live in the
-proprietary `perissables` repository. There is no creator repository, public
-validator crate, archive importer, or runtime content download in MVP.
+All content, schema code, validation, fixtures, and assets live in the
+proprietary `perissables` repository.
 
 One session uses the built-in aggregate content identity:
 
@@ -408,8 +404,7 @@ One session uses the built-in aggregate content identity:
 - `content_schema_version`
 - `game_rules_version`
 
-The server loads built-in content from its immutable release artifact. Clients
-cannot upload content, provide a URL, or make the server fetch content.
+The server loads built-in content from its immutable release artifact.
 
 Schema v1 defines strict story, character, theme, map-reference, and manifest
 DTOs with required known fields, duplicate-key rejection, portable lowercase
@@ -419,9 +414,8 @@ vectors. TMX parsing disables external entities, external resources, and parser
 network access.
 
 Exact parser and resource ceilings are frozen with typical, large, limit, and
-rejected built-in fixtures. Creator archives, custom assets, sandboxed decoding,
-public tooling, and publication/trust systems are designed only when post-MVP
-creator work begins.
+rejected built-in fixtures. Validation exists to reject a bad repository-owned
+build before release.
 
 ## Presentation And Local Settings
 

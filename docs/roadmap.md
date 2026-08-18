@@ -18,7 +18,7 @@ later phase.
 | Authoritative vertical slice | 00-02 | Two clients complete one tiny server-owned run |
 | Playable MVP | 00-09 | Complete repeatable 2-4 player game loop with built-in content |
 | Release-ready | 00-13 | Regional service, measured performance, Steam packages, and production operations |
-| Post-MVP | Separate backlog/repositories | Creator tooling, community content, additional themes/UI, durable runs, and other extensions |
+| Post-MVP | Separate backlog | Additional themes/UI, durable runs, and other extensions |
 
 ## Phase Plan
 
@@ -175,11 +175,8 @@ plan.
 
 ## Post-MVP Boundary
 
-Creator tooling, `storycheck`, local/archive import, a separate MIT schema
-repository, community hosting, accounts, likes/comments, public uploads,
-moderation, publication signing, custom maps/media, additional themes/UI, voice,
-durable active runs, and normal solo play belong to post-MVP plans. No
-compatibility interface is reserved until one of those projects begins.
+Additional themes/UI, voice, durable active runs, and normal solo play belong to
+post-MVP plans.
 
 ## Definition Of Done
 

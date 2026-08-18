@@ -18,8 +18,7 @@ One session uses one immutable aggregate content identity:
 - content schema version; and
 - game-rules version.
 
-The server loads the aggregate content from its release artifact. Clients cannot
-upload content, provide a URL, or make the server fetch content.
+The server loads the aggregate content from its release artifact.
 
 ## Data and engine boundary
 
@@ -94,12 +93,7 @@ Built-in presentation conventions:
 Presentation fallback never changes gameplay authority, collision, controls,
 focus, timing, or events.
 
-## Ownership and post-MVP boundary
+## Ownership boundary
 
 The runtime, built-in assets, schema code, fixtures, and built-in content are All
 Rights Reserved in `perissables`.
-
-Creator tooling, `storycheck`, archive import, custom content/media, a separate
-MIT schema repository, public uploads, publication signing, moderation, and
-hosted community content are post-MVP. Their formats and trust model are not
-reserved now.

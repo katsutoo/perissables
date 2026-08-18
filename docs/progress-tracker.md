@@ -172,8 +172,6 @@ links its relevant code, CI, test, QA, security, benchmark, or decision evidence
 
 ## Post-MVP
 
-Track creator tooling, `storycheck`, archive/local import, a separate schema
-repository, community content/hub, moderation, publication signing, custom
-maps/media, additional themes/UI, voice, durable active runs, normal solo play,
+Track additional themes/UI, voice, durable active runs, normal solo play,
 achievements, and additional platforms in separate post-MVP backlogs. They are
 not Phase 01-13 completion gates.

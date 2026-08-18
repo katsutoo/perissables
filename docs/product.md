@@ -62,8 +62,7 @@ The storage room is an area within the same map and theme, not a second content
 pack.
 
 The engine stays shared while the one release story remains editable through
-validated repository-owned data. Creator packs and additional themes are
-post-MVP.
+validated repository-owned data.
 
 ## Combat And Dice
 

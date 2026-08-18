@@ -6,8 +6,7 @@ Updated: 2026-08-16
 
 Product controls and compatibility behavior derive from
 `docs/mvp-contract.md`. This model covers the shipped game client/server and
-built-in content. Creator content and a future community hub require a separate
-post-MVP threat model.
+built-in content.
 
 ## Assets and objectives
 

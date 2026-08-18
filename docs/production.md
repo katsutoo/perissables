@@ -91,6 +91,6 @@ numeric fun score before baseline evidence exists.
 
 Phase 12 prepares and assigns owners for Steam app/store access, capsule art,
 screenshots, trailer, store copy, age/content disclosures, launch languages,
-pricing proposal, privacy/support contacts, incident handling, server cost, and
-shutdown policy. Phase 13 approves and publishes the final set against the exact
+pricing proposal, privacy/support contacts, incident handling, server cost,
+shutdown policy, and the public marketing site (`docs/site.md`). Phase 13 approves and publishes the final set against the exact
 release artifacts.

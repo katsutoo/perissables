@@ -19,6 +19,11 @@ One session uses one immutable aggregate content identity:
 - game-rules version.
 
 The server loads the aggregate content from its release artifact.
+Clients declare the same five-field identity before create/join/rejoin. The
+contract requires exact equality, including the locale-independent aggregate
+checksum; compatible-looking SemVer or schema values cannot substitute for it.
+Phase 02 supplies admission fixtures and Phase 04 supplies canonical checksum
+fixtures. Content identity does not establish client trust.
 
 ## Data and engine boundary
 
@@ -33,6 +38,12 @@ The engine controls authority, dice/combat behavior, effects, enemy random actio
 selection, movement, collision, timers, inventory, voting, UI behavior,
 validation, compatibility, and resource enforcement. Content never executes
 code.
+
+Story choices declare a visible `default_choice_id` for abstention. The engine
+owns ballot eligibility, tie resolution, and story-check actor selection.
+Spells/items each reference one engine effect and one target type; assembling
+character kits does not create multi-effect action scripts. Guard and modifier
+replacement, item resolution, and full-inventory handling follow the contract.
 
 ## Explanatory shape
 
@@ -67,6 +78,9 @@ Schema validation:
 - rejects duplicate and unknown fields;
 - enforces portable lowercase identifiers and paths;
 - resolves every story, encounter, effect, map, sprite, and audio reference;
+- requires each story vote's default to belong to its nonempty offered choice
+  set; validates check stats, single-effect spell/item definitions, target
+  types, recipient selectors, and positive bounded magnitudes;
 - bounds text, collections, transition chains, graph size, map dimensions, and
   decoded resource dimensions;
 - rejects unreachable required nodes and non-terminating automatic chains;

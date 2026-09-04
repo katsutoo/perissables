@@ -2,7 +2,7 @@
 
 Status: Normative release-behavior policy
 Owner: Sole developer
-Updated: 2026-08-16
+Updated: 2026-09-04
 
 QA exercises the product through a supported shipped entrypoint. Internal state
 machines, parser matrices, and process-lifecycle fault injection belong to
@@ -29,7 +29,7 @@ Record:
 - Git SHA, dirty state, artifact digest, build profile/features, and command;
 - target environment/URL and non-secret configuration;
 - OS build, GPU/driver, resolution, UI scale, and input mode;
-- synthetic account roles/data;
+- authorized Steam test-account roles and synthetic gameplay data;
 - exact steps, expected result, actual result, visible and durable effects;
 - logs or captures with secrets/personal data redacted; and
 - cleanup and untested residual risk.
@@ -56,7 +56,9 @@ added to the support contract.
    exercise settings creation/recovery through the UI, relaunch, and confirm no
    authoritative state or secret is stored locally.
 2. **Three-run loop.** Complete lobby -> selection -> ready/start -> story ->
-   check -> combat -> summary -> lobby three times without stale state.
+   check -> combat -> summary -> lobby three times without stale state. Observe
+   the displayed timeout choice when everyone abstains, check-actor attribution,
+   effect replacement, item consumption, and full-inventory reward feedback.
 3. **Presentation and accessibility.** Exercise the supermarket presentation
    and single scalable UI at required resolutions/scales in all nine launch
    locales, with keyboard-only navigation, visible focus, correct wrapping/font
@@ -69,15 +71,22 @@ added to the support contract.
 5. **Reconnect.** Disconnect or terminate the client during world, story, and
    combat; use a fresh Steam ticket to reclaim the reserved seat, acknowledge
    resync, exercise takeover, and confirm no duplicate visible action/audio
-   event.
+   event. Confirm discarded ballots stay discarded, a vacant leader is elected
+   on eligible rejoin, and voluntary departure permits the last living player
+   to finish an existing run but not start a new solo run. Deadline interleavings
+   belong to automated transcripts.
 6. **Drain and run loss.** Exercise a clean drain, drain deadline, forced stop,
    and isolated process crash at declared user-visible points. Existing sessions
    and reserved-seat rejoin work while the owner drains; forced/crashed runs end
    with the stable run-lost outcome and no false recovery claim.
-7. **Trust boundaries.** Exercise invalid/expired Steam proof, wrong version or
-   built-in content identity, and oversized traffic through normal user
-   entrypoints. Confirm stable public errors, no leaked internals, and no
-   external fetch.
+7. **Trust boundaries.** Observe invalid/expired Steam proof and compatibility
+   failures through supported connection flows. Wrong protocol shows
+   `update_required`; a valid unequal content identity shows `content_mismatch`
+   with update/restart guidance. A failed rejoin preserves the reservation and
+   existing connection. Controlled mismatching peer builds have their own
+   recorded digests. Oversized/malformed traffic and per-field mismatch matrices
+   belong to protocol integration tests. Confirm no leaked internals or external
+   content fetch.
 8. **Final package and rollback.** On exact Phase 13 candidates, inspect package
    contents, prove development identity/debug paths and secrets are absent,
    launch both targets from clean caches, verify signatures/checksums/depot
@@ -112,3 +121,8 @@ environments are separate diagnostic artifacts with their own digest.
 Phase 09 may record a Playable-MVP report. Phase 12 records a production-profile
 pre-release report. Phase 13 reruns every applicable journey on exact final
 digests and is the only final Release-ready QA verdict.
+
+Synthetic capacity tests use a separate non-distributable server build and are
+not final-package QA. Release evidence pairs both builds using the artifact
+matrix in `docs/benchmark-plan.md`; the production digest always uses real Steam
+authentication with the authorized account pool.

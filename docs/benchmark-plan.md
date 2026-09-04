@@ -2,7 +2,7 @@
 
 Status: Normative performance experiment policy
 Owner: Sole developer
-Updated: 2026-08-16
+Updated: 2026-09-04
 
 Performance is established by production-mode measurements, not by contract
 detail or code inspection. Product targets come from `docs/mvp-contract.md`.
@@ -15,8 +15,8 @@ detail or code inspection. Product targets come from `docs/mvp-contract.md`.
    limits, scaling needs, latency, reliability, and headroom.
 3. **Phase 12 client gate:** calibrate the reference machine and verify the 60
    FPS experience for frozen gameplay scenes.
-4. **Phase 13 final validation:** rerun applicable gates against exact final
-   server/package digests.
+4. **Phase 13 final validation:** qualify exact production artifacts and their
+   separately identified capacity build according to the artifact matrix below.
 
 Phase 02 may collect directional timings for instrumentation sanity, but those
 numbers are not release claims.
@@ -36,6 +36,51 @@ numbers are not release claims.
 - Predeclare practical thresholds after measuring the environment noise floor
   and before candidate comparison.
 - Never average percentiles.
+
+## Artifact matrix and final release evidence
+
+| Evidence | Artifact and identity path |
+| --- | --- |
+| 64-session capacity sweep and capacity-scale boundary workloads | Separate non-distributable server build, production optimization profile, isolated synthetic identity adapter |
+| Steam authentication, release QA, startup, owning-process rejoin, drain/run loss, and rollback | Exact production server/package digests, real Steam path, small authorized account pool |
+| Client presentation/frame gates | Exact production client package digests |
+| Bounded server latency/resource checks at the authorized account count | Exact production server digest; record the actual load and do not infer 64-session capacity from it |
+
+Both capacity and exact-production evidence are required in Phase 13. Here,
+non-release means a non-distributable feature set, not a debug optimization
+profile. Never enable the synthetic adapter in the production artifact to make
+the capacity workload run, and never label the adapter build's measurements as
+measurements of the production digest.
+
+Pair the builds in one release evidence manifest:
+
+- Record both digests and exact build commands from the same clean final Git
+  revision, `Cargo.lock`, content aggregate identity, and pinned build inputs.
+- Match target, Rust/native toolchains, optimization, LTO, panic/overflow/debug
+  assertion settings, allocator, and runtime limits. Record dependency and
+  feature differences; permit only the isolated identity-adapter selection and
+  its necessary dependencies. Unrelated source, feature, or configuration
+  differences invalidate the pairing.
+- Keep production admission, content matching, session mutation, serialization,
+  authorization, rate limits, queues, and network paths identical after identity
+  validation. Adapter input is bounded and uses unique synthetic principals;
+  it cannot bypass those checks or reach Steam.
+- Qualify the real identity path separately. At a common small load supported by
+  the authorized account pool, compare both builds' post-auth behavior and
+  unprofiled timing under the same workload/environment. Freeze practical
+  tolerance in Phase 12 before the final comparison; an unexplained difference
+  or uncertainty across the gate is `INCONCLUSIVE`.
+- Prove production adapter absence by feature/build inspection and package
+  verification. Store commands, feature/dependency differences, workload IDs,
+  both reports, and the pairing verdict together.
+
+Phase 12 freezes the small-load schedule, account count, sample sufficiency,
+latency/resource gates, and equivalence tolerance. Phase 13 reruns the capacity
+gates on the paired final capacity build and the matrix's production gates on
+exact final artifacts. A change to final source, content, build flags, or runtime
+limits requires a new pairing and affected measurements. Missing either set of
+required evidence blocks Release-ready. Capacity remains evidence about the
+paired build under its stated conditions, not proof of binary identity.
 
 ## Phase 10 regional deployment and drain spike
 
@@ -99,6 +144,8 @@ are forbidden. Missing authorized Steam staging makes the Steam authentication
 check `BLOCKED`; it does not block an otherwise valid isolated capacity
 measurement. Missing the production limiter path or release-adapter absence proof
 makes the capacity gate `BLOCKED`.
+The artifact matrix additionally governs whether this capacity result can support
+a particular release candidate.
 
 ### Measurement validity and targets
 

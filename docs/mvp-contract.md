@@ -2,7 +2,7 @@
 
 Status: Ready for Phase 01 implementation
 Owner: Sole developer
-Updated: 2026-08-16
+Updated: 2026-09-04
 
 This document is the source of truth for product, authority, compatibility, and
 release requirements. It intentionally does not pre-design every queue, storage
@@ -57,8 +57,9 @@ dice/combat events through one authoritative server.
 
 - Character builds, leveling, skill trees, deep equipment, account progression,
   or long-term saves.
-- Normal solo play; one-player execution exists only in development and
-  automated tests.
+- Starting a solo run. New runs require two to four players; an already-started
+  run may continue with one remaining player after departures or deaths.
+  One-player starts exist only in development and automated tests.
 - Procedural maps, voice chat, voice barks, scripting, or arbitrary content
   code.
 - Additional themes and UI skins/variants.
@@ -122,21 +123,49 @@ randomness. Tests use fixed known states, not frequency assertions.
 - Node kinds are dialogue, check, encounter, transition, return, and end.
 - Checks have required success/failure branches; missing critical branches fall
   back to the corresponding normal branch while retaining critical feedback.
+- At each story check, the actor is the connected living leader, otherwise the
+  connected living player with the lowest lexical player ID. This applies after
+  both direct interactions and group choices; the interacting player does not
+  automatically roll. Content names the stat, not a different actor policy.
+- Actor selection, reading the actor's current stat/modifiers, rolling, and
+  committing the outcome are one authoritative operation. Presentation cannot
+  postpone or reroll it. If nobody qualifies, the node waits without consuming
+  randomness or modifiers and retries when a living player reconnects. Run
+  termination cancels the pending node. A disconnect processed before resolution
+  excludes that actor; one processed afterward cannot change the result.
 - Effects are limited to flag and item operations supported by the engine.
 - At run start, the server uses the run CSPRNG to choose one leader uniformly
   from the occupied party.
-- Connected living players have one replaceable vote. Dead and disconnected
-  players cannot vote.
-- A vote remains open for `45 seconds`. If the connected living leader voted
-  for one of the tied top choices, that choice wins as though the leader's vote
-  counted twice. Otherwise, the choice whose tied voter has the lowest lexical
-  player ID wins.
+- Connected living players have one replaceable vote. Disconnect, death, leave,
+  or seat expiry discards that player's ballots immediately. Rejoin does not
+  restore a discarded ballot; the player may vote again while the vote is open.
+- Each story vote declares one `default_choice_id`, shown as the timeout choice.
+  Validation requires a nonempty choice set containing that default. Offered
+  choices and the default remain fixed while the vote is open.
+- A vote remains open for `45 seconds` of unpaused gameplay time. At closure,
+  count only ballots from currently connected living players for valid choices.
+  Votes consume no randomness. Resolve according to this table:
+
+| Ballots at closure | Outcome |
+| --- | --- |
+| None | Story selects `default_choice_id`; loot remains unassigned |
+| One choice has the highest count | That choice wins |
+| Top choices tie and the connected living leader voted for one of them | The leader's choice wins |
+| Top choices tie without an eligible leader ballot among them | The tied choice supported by the lowest lexical player ID wins |
+
+- A ballot processed at or after the deadline is rejected. The session owner
+  applies due seat expiries before resolving due votes or accepting new input.
+  Other accepted events follow the session's serialized order. Ending a run
+  cancels its open votes without applying their choices or granting loot.
 - A disconnected leader keeps the role through the seat-rejoin grace window but
   cannot break ties while absent. A connected dead leader may transfer
-  leadership to one connected living player. If the leader explicitly leaves or
-  the seat expires, the server selects a replacement uniformly from connected
-  living players using the run CSPRNG. Leadership changes are authoritative
-  events.
+  leadership to one connected living player; this is their only permitted
+  gameplay-related control while spectating. If the leader explicitly leaves or
+  the seat expires, the role becomes vacant. If connected living candidates
+  exist, the server immediately selects a replacement uniformly using the run
+  CSPRNG; otherwise it leaves the role vacant without a random draw. A vacant
+  role is filled by the same rule when an eligible player next reconnects.
+  Leadership changes are authoritative events and cannot postpone vote closure.
 - Automatic transition chains, events, collections, and text are bounded by the
   versioned content schema.
 
@@ -166,23 +195,56 @@ randomness. Tests use fixed known states, not frequency assertions.
   has no effect.
 - Direct damage and healing use a fixed content-defined amount, with healing
   capped at maximum HP. Guard changes the next incoming positive damage to
-  `max(1, floor(damage / 2))`, then expires. A next-check bonus or
-  penalty adds or subtracts its content-defined amount once; the modified check
-  target is clamped to `0..=100`.
+  `max(1, floor(damage / 2))`, then consumes one protected hit. A next-check bonus
+  or penalty adds or subtracts its content-defined amount once; the modified
+  check target is clamped to `0..=100`.
+- Each actor holds at most one guard, one next-check bonus, and one next-check
+  penalty. Reapplying the same kind replaces its remaining value, even if the
+  new value is weaker; kinds never accumulate. Normal guard sets one protected
+  hit and critical guard sets two. Zero damage does not consume guard.
+- The next attack, spell, or story check uses `stat + bonus - penalty`, clamps
+  once, and consumes both modifiers even on a critical roll. Compute with a
+  signed intermediate wide enough for the validated magnitudes. Critical `0`
+  and `100` take precedence over the modified target. Rejected actions, passes,
+  and item uses consume no check modifiers. Guard and modifiers clear on death,
+  removal, encounter end, or run reset; disconnect alone does not clear them.
 - Content composes these five known effects and cannot define code.
+  Each spell or item applies exactly one effect to one target; composition means
+  assembling a kit of actions, not ordering multiple effects in one action.
 - Enemies do not use an AI subsystem. On their turn, the server uses the run
   CSPRNG to choose uniformly from legal actions in their kit, then uniformly
   from targets valid for that action. Enemy kits may contain only spells and do
   not require a basic attack. With no legal action, they pass.
 - Characters have four inventory slots. Items come from story rewards and
   combat loot and are consumed on use.
-- Dead players spectate. They cannot act or vote and cannot be targeted by
-  actions that require a living target.
+- Every item declares one of the five effect IDs, its positive magnitude where
+  applicable, and one target type: living ally including self, living opponent,
+  or self. Damage/penalty items target opponents; healing/guard/bonus items
+  target allies or self. Items are usable only on the holder's combat turn,
+  apply the normal effect without a roll or critical outcome, and consume one
+  item and the turn atomically. Enemy-held items follow the same rules.
+- A legal item use at full HP or on an already-buffed target still consumes the
+  item and turn; replacement rules apply. Invalid phase, item, or target rejects
+  the action without spending anything. Items do not stack within a slot and
+  enter the lowest-index free slot.
+- Story item grants resolve in authored order for their designated recipients.
+  A recipient without a living reserved character or a free slot receives no
+  item; that grant is skipped with recipient-appropriate feedback. There is no
+  automatic discard of existing items, replacement, rerouting, or pending reward
+  queue. The story continues and does not roll back other completed effects.
+- Dead players spectate. Apart from the leader-transfer control above, they
+  cannot act or vote and cannot be targeted by actions requiring a living target.
 - After combat, a corpse exposes at most two server-approved eligible items to
   the living party; no world-distance or combat-position test applies. For each
   item, connected living players cast one replaceable vote for an eligible
   living recipient with a free slot. The leader tie rule and lexical fallback
   apply. An unassigned item disappears when the `45 second` loot vote closes.
+- Loot uses the ballot eligibility and timeout table above, with no default
+  recipient. Recipient eligibility is checked again at closure. Concurrent loot
+  votes resolve in lexical corpse ID, then corpse loot-slot order; each corpse's
+  published loot slots are fixed for that loot phase, even after an assignment.
+  Each assignment commits before the next vote checks free slots. Invalid
+  recipient ballots are discarded, then the remaining ballots are tallied.
 - A player combat turn lasts `30 seconds`, then becomes an authoritative pass.
 - Combat ends on enemy defeat, party wipe, or a bounded engine limit. Invalid
   actions do not mutate gameplay state, consume randomness, or consume a turn.
@@ -191,7 +253,7 @@ randomness. Tests use fixed known states, not frequency assertions.
 
 Locked product targets:
 
-- Party size: `2..=4`.
+- Party size at run start: `2..=4`; departures may reduce an active run to one.
 - Client presentation: target `60 FPS`.
 - Client fixed update: `60 Hz`, with bounded catch-up and dropped-time
   diagnostics.
@@ -362,16 +424,38 @@ States are `Lobby`, `Running`, `Summary`, and `Ended`.
 - New seats join only a lobby; reserved seats may rejoin non-ended states.
 - The lobby owner selects a story and may remove a seat only while the session
   is in `Lobby`. There is no mid-run kick.
-- If the lobby owner disconnects, ownership transfers to the longest-connected
-  remaining player, then lexical player ID.
-- All occupied seats must be connected, ready, and use unique characters before
-  start.
+- If the lobby owner disconnects or leaves, ownership transfers to the
+  longest-connected remaining player, then lexical player ID. With no connected
+  player, ownership is vacant; apply the same rule on the next join/rejoin.
+  Lobby ownership is separate from run leadership and requires no living actor.
+- Starting requires two to four occupied seats, all connected, ready, and using
+  unique characters. Membership or character-selection changes clear readiness.
 - Run completion or wipe enters summary.
 - Acknowledgement or bounded timeout returns remaining seats to a cleared lobby.
-- Explicit leave releases a lobby seat; socket loss preserves it through grace.
 - Empty/expired sessions end and release capacity.
-- Combat turns and story votes have monotonic deadlines; all-disconnected runs
-  pause gameplay deadlines but not absolute credential/session expiry.
+- Combat turns and story/loot votes have monotonic deadlines. When no living
+  player is connected, gameplay and its deadlines pause, including enemy turns
+  and automatic story progression. Resume with the remaining durations when a
+  living player reconnects; dead spectators cannot keep gameplay running alone.
+  Seat, credential, session, and deployment-drain expiry remain absolute.
+
+Departure transitions are authoritative and apply before selecting replacement
+leaders or resolving subsequent gameplay:
+
+| Event/state | Seat and gameplay outcome |
+| --- | --- |
+| Socket loss in any non-ended state | Reserve the seat for grace; discard ballots. Keep its character, HP, inventory, and effects. While gameplay is unpaused, the disconnected character remains targetable and its combat turns time out to pass. |
+| Explicit leave or grace expiry in `Lobby` | Release the seat and selection; clear readiness. There is no run inventory. |
+| Explicit leave or grace expiry in `Running` | Release the seat and remove its character from targets and turn order; discard inventory/effects without creating corpse loot. Retain only bounded summary history. End its current turn if needed. |
+| Explicit leave or grace expiry in `Summary` | Release the seat and its acknowledgement obligation; preserve the already-produced summary for remaining players. |
+| No occupied seats remain | Enter `Ended` and release session capacity. |
+| Seats remain but no living reserved characters remain in `Running` | Enter the wipe summary; cancel pending story/check/loot work. |
+| One living reserved character remains in `Running` | Continue the existing run, pausing if that player is disconnected. A later run still needs at least two players. |
+
+Explicit leave is allowed in every non-ended state and ends the right to reclaim
+that reservation. An expired or departed player cannot join the ongoing run as
+a new seat. At a grace deadline, expiry wins over rejoin. Session expiry enters
+`Ended` even if gameplay is paused.
 
 ## In-Memory Sessions And Draining
 
@@ -405,6 +489,25 @@ One session uses the built-in aggregate content identity:
 - `game_rules_version`
 
 The server loads built-in content from its immutable release artifact.
+
+Create, join, and rejoin carry the client's complete aggregate content identity
+in the pre-session payload. After syntax/protocol and identity validation, but
+before allocating a seat, taking over a connection, or sending gameplay state,
+the server requires exact equality of all five fields with its loaded aggregate.
+SemVer ranges and matching schema versions alone do not establish compatibility.
+Existing sessions retain the aggregate they started with throughout drain.
+
+A well-formed unequal identity returns `content_mismatch`; malformed or missing
+fields use the protocol's malformed-input error, and unsupported protocol
+versions still return `update_required`. Failure neither mutates the session nor
+releases, extends, or takes over a reservation. The client offers update/restart
+guidance and does not fetch content from lobby metadata or retry automatically.
+The identity is a compatibility claim, not proof of client integrity or authority.
+
+Phase 02 freezes the identity envelope and mismatch fixtures with its slice
+content. Phase 04 freezes canonical aggregate/checksum fixtures. The checksum
+is locale-independent and covers the shipped aggregate, including all packaged
+locales; choosing another language does not change identity.
 
 Schema v1 defines strict story, character, theme, map-reference, and manifest
 DTOs with required known fields, duplicate-key rejection, portable lowercase
@@ -519,6 +622,13 @@ Phase 13 release candidates exist.
 - Benchmarks use production-mode artifacts, frozen workloads, calibrated
   environments, raw results, independent runs, correctness/error counts, and
   predeclared gates that exceed measured noise.
+- Capacity gates use a separately identified production-profile build with the
+  isolated synthetic identity adapter. Exact production artifacts exclude that
+  adapter and undergo real Steam authentication, release QA, client performance,
+  and bounded server performance/lifecycle checks with authorized accounts.
+  Phase 13 requires both sets of evidence, paired by final source revision and
+  the build-equivalence rules in `docs/benchmark-plan.md`; synthetic capacity
+  results are never attributed to a production digest.
 - No test or benchmark retries until green, hides intermittent failures, or
   trades correctness for speed.
 

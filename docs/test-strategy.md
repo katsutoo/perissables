@@ -2,7 +2,7 @@
 
 Status: Normative automated-test policy
 Owner: Sole developer
-Updated: 2026-08-16
+Updated: 2026-09-04
 
 Product and protocol behavior comes from `docs/mvp-contract.md`. This document
 defines how automated tests earn confidence without becoming a second
@@ -83,6 +83,24 @@ Use boundary analysis, not mechanical case multiplication.
 - Process-lifecycle tests cover admission refusal after unready, reserved-seat
   rejoin while draining, natural completion, deadline expiry, forced stop, and
   stable run-loss behavior.
+
+The following focused transcripts close the documentation review findings. Add
+them with their owning phase; these are acceptance cases, not tests already run.
+
+| Phase | Behavior and required oracle |
+| --- | --- |
+| 02, extended in 04 | Exact five-field content match admits; change each field independently to get `content_mismatch` without seat allocation or gameplay state. Missing/malformed fields and wrong protocol retain their distinct errors. Phase 04 adds canonical checksum and locale-selection cases. |
+| 04 | Zero story ballots select the declared default; one winner, leader tie, and lexical tie each select the specified choice without RNG consumption. Disconnect discards an existing ballot; rejoin cannot resurrect it. A fresh ballot before closure counts; at the deadline it is rejected. |
+| 04 | Check actors follow eligible leader then lexical fallback even when a different player initiated the interaction. Use unequal stats and a fixed roll that distinguishes them. An empty candidate set leaves the node waiting without RNG/modifier consumption; reconnect resolves once; ending cancels. Disconnect before versus after atomic resolution cannot produce a second roll. |
+| 05 | Repeated normal/critical guards replace remaining hit counts; zero damage preserves guard. Repeated bonuses/penalties replace their own slots, combine once, clamp, and both expire on every actual check including criticals. Death/encounter end clears effects; disconnect does not. |
+| 05 | Items resolve without RNG, spend exactly one item/turn on legal use, preserve next-check modifiers, and spend nothing on rejection. Full-HP use still spends; full-inventory story grants skip without replacing items or blocking progression. Multiple grants use authored order. |
+| 05 | No loot ballots or no valid recipient means no assignment. Revalidate recipients at closure; simultaneous awards competing for one free slot resolve in the specified corpse/slot order without overflow or duplicate grants. |
+| 06, transport qualification in 07 | Leader expires while all others are disconnected: vacant role, no random draw, then one election on eligible rejoin. Empty lobby ownership similarly recovers. Leave/expiry in each state releases the right seat and removes active characters/items without loot. One-player continuation, no-living-player wipe, no-seat end, and reset to a two-player start requirement are distinct outcomes. |
+| 07 | Due expiry wins over rejoin or a due vote. Dead spectators cannot advance gameplay while every living player is disconnected; gameplay resumes with remaining time, while seat/session/drain expiry keeps running. A content-mismatched takeover neither replaces the connection nor extends grace. |
+
+Phase 13 build checks also establish the production/capacity-build relationship
+from `docs/benchmark-plan.md`, including adapter absence in the production
+artifact. Behavioral transcripts do not prove equal performance between builds.
 
 ## Fuzzing
 

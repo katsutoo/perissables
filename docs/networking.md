@@ -58,6 +58,12 @@ Protocol rules:
 - Production supports one gameplay protocol version. Unsupported clients receive
   `update_required` before admission; deployments drain admitted sessions before
   removing that server version.
+- Create/join/rejoin carry all five aggregate content identity fields. Match
+  them exactly before seat allocation, connection takeover, or gameplay state
+  disclosure. `content_mismatch` preserves the existing reservation/connection;
+  it cannot grant authority or trigger a content download. Identity fields and
+  rejection fixtures start in Phase 02; canonical content fixtures follow in
+  Phase 04.
 - IDs are opaque and server-generated.
 - Every admitted expected input receives exactly one result.
 - Recipient projections expose no secret or other-player private state.
@@ -91,8 +97,17 @@ Steam staging is available. It cannot compile into release features/packages.
 Steam lobbies are private or friends-only and invite-based; there is no public
 browser or matchmaking. New seats join only a lobby; reserved seats may rejoin a
 non-ended session.
-Disconnect preserves a seat through bounded grace. Explicit lobby leave or
-expiry releases it.
+Disconnect preserves a seat through bounded grace. Explicit leave in any
+non-ended state or grace expiry releases it. The contract's departure table
+defines character/inventory removal, leader vacancy, last-player continuation,
+and wipe/end behavior. Rejoin at or after the grace deadline cannot reclaim the
+seat. A mismatched rejoin cannot evict an already-connected player.
+
+The session owner applies due seat expiries before vote closure and new input.
+Disconnect discards ballots; acknowledged rejoin permits fresh ballots only
+while the vote is open. Gameplay pauses when no living player is connected;
+absolute expiry and drain deadlines continue. Lifecycle changes and atomic story
+check resolution share the same serialized authority path.
 
 Session state exists only in the owning server process. A graceful deploy marks
 that process unready, refuses new admission, and preserves existing connections

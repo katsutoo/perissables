@@ -12,6 +12,12 @@ links its relevant code, CI, test, QA, security, benchmark, or decision evidence
 - [x] Product scope, non-goals, authority model, and milestones are clear.
 - [x] Documentation authority and repository boundaries are clear.
 - [x] Evidence-gated decisions are distinguished from locked contracts.
+- [x] Documentation review findings resolved in the
+  [contract](mvp-contract.md#locked-gameplay-rules) and
+  [release evidence rules](benchmark-plan.md#artifact-matrix-and-final-release-evidence): vote defaults and
+  eligibility, empty leadership and departure transitions, story-check actors,
+  effect/item resolution, content admission, and separate capacity-build evidence.
+  Implementation and validation remain unchecked in their owning phases below.
 - [x] Phase 00 complete.
 
 ## Phase 01 - Repository Bootstrap
@@ -38,6 +44,8 @@ links its relevant code, CI, test, QA, security, benchmark, or decision evidence
 - [ ] One map interaction, dice check, legal combat action, and rejected action
   resolve on the server.
 - [ ] Both clients converge on the same summary revisions/events.
+- [ ] Freeze content-identity admission DTOs and exact-match/mismatch fixtures;
+  mismatches cannot allocate seats or disclose gameplay state.
 - [ ] Release feature checks prove the local identity adapter is absent.
 - [ ] Run a headless/internal rules playtest and record unclear check, combat,
   and turn feedback for Phase 05.
@@ -60,6 +68,9 @@ links its relevant code, CI, test, QA, security, benchmark, or decision evidence
   and bounded transitions.
 - [ ] Freeze parser/resource ceilings from typical, large, limit, and rejected
   fixtures.
+- [ ] Pass abstention/default, discarded/replaced ballot, tie/deadline, and
+  story-check actor/wait/cancellation transcripts; validate vote defaults and
+  canonical identity/checksum fixtures.
 - [ ] Phase 04 complete.
 
 ## Phase 05 - Combat, Characters, Death, And Loot
@@ -68,6 +79,8 @@ links its relevant code, CI, test, QA, security, benchmark, or decision evidence
   behavior through authoritative state machines.
 - [ ] Add deterministic public transcripts for legal, rejected, boundary, and
   rollback behavior.
+- [ ] Qualify bounded effect replacement, check-modifier consumption, item use
+  without rolls, full-inventory grants, and competing loot assignments.
 - [ ] Remove every temporary debug character/action from release features.
 - [ ] Run a blind combat playtest outside the implementation team and record
   turn clarity, idle time, encounter length, rules questions, and desire to
@@ -81,6 +94,8 @@ links its relevant code, CI, test, QA, security, benchmark, or decision evidence
 - [ ] Ship the supermarket presentation and storage-room area, one scalable
   keyboard-operable UI, settings, and fallback behavior.
 - [ ] Complete event-driven ambience, music, and SFX without voice.
+- [ ] Qualify leave/expiry in each session state, vacant leadership, pause/resume,
+  last-player continuation, wipe/end precedence, and two-player minimum on reset.
 - [ ] Run the first complete story as a blind playtest and resolve blockers in
   comprehension, party downtime, run length, or willingness to replay.
 - [ ] Phase 06 complete.
@@ -93,6 +108,8 @@ links its relevant code, CI, test, QA, security, benchmark, or decision evidence
   resync, heartbeat, replay rejection, and stable public errors.
 - [ ] Qualify bounded rate, mailbox/writer, slow-client, and transport-chaos
   behavior.
+- [ ] Qualify expiry-before-rejoin, ballot discard across reconnect, gameplay
+  pause with only dead spectators connected, and mismatched takeover preservation.
 - [ ] Record the small authorized Steam test-account pool needed for identity
   qualification, separate from synthetic isolated capacity identities.
 - [ ] Phase 07 complete.
@@ -146,6 +163,8 @@ links its relevant code, CI, test, QA, security, benchmark, or decision evidence
 
 - [ ] Freeze the reference client machine, staging shape, benchmark workloads,
   timer/driver noise floor, and practical release gates.
+- [ ] Freeze the artifact matrix, authorized-account small-load checks, and
+  production/capacity build-equivalence tolerance from `docs/benchmark-plan.md`.
 - [ ] Complete consented playtests and report onboarding/run timing with
   abandonment and uncertainty.
 - [ ] Run the pre-release QA matrix and calibrated client/server benchmarks on
@@ -163,7 +182,11 @@ links its relevant code, CI, test, QA, security, benchmark, or decision evidence
   through the protected signing workflow.
 - [ ] Verify the Phase 07 Steam lobby/invite flow against final depots; complete
   production deployment, observability, and the rollback drill.
-- [ ] Rerun final QA and performance gates against exact final digests.
+- [ ] Rerun final QA, client frame gates, and bounded server performance/lifecycle
+  checks against exact production digests using the authorized Steam account pool.
+- [ ] Rerun capacity gates on the separate production-profile adapter build from
+  the same final revision; record both digests, permitted build differences,
+  production adapter-absence proof, and a passing artifact-pairing verdict.
 - [ ] Approve and publish store materials, age/content disclosures, pricing,
   launch languages, end-user terms, privacy/support contacts, third-party
   notices, contribution-policy decision, asset provenance, and the operating

@@ -2,7 +2,7 @@
 
 Status: Normative game/runtime threat scope
 Owner: Sole developer
-Updated: 2026-08-16
+Updated: 2026-09-04
 
 Product controls and compatibility behavior derive from
 `docs/mvp-contract.md`. This model covers the shipped game client/server and
@@ -55,6 +55,10 @@ approval.
   them raw.
 - A fresh validated Steam identity can reclaim only its own reserved in-memory
   seat.
+- Exact aggregate content identity is checked before admission or takeover.
+  A mismatch cannot evict the current connection, extend a reservation, or
+  disclose gameplay state. A matching claim is not proof of client integrity;
+  all action authorization and validation remain required.
 - Public errors expose stable codes, not parser internals, credentials, hidden
   state, or filesystem paths.
 - Every queue, task set, retry loop, allocation, parser, decoded built-in
@@ -82,6 +86,10 @@ approval.
 - Final packages contain no local/benchmark identity adapter, debug credential,
   test endpoint, developer character/action, secret, or unintended private
   symbol.
+- Capacity evidence identifies its separate non-distributable adapter build and
+  production counterpart under `docs/benchmark-plan.md`. The benchmark adapter
+  may replace only identity acquisition/validation; it cannot bypass seat,
+  content, authorization, rate, or gameplay checks.
 
 ## Privacy and retention
 

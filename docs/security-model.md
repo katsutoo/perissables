@@ -2,7 +2,7 @@
 
 Status: Normative game/runtime threat scope
 Owner: Sole developer
-Updated: 2026-09-04
+Updated: 2026-09-12
 
 Product controls and compatibility behavior derive from
 `docs/mvp-contract.md`. This model covers the shipped game client/server and
@@ -34,6 +34,7 @@ proof to an untrusted endpoint, or consuming unbounded resources.
 | Threat | Required control | Verification | Residual risk |
 | --- | --- | --- | --- |
 | Player/session takeover | Fresh Steam app/ownership validation; identity/session/player binding; one connection | Wrong identity/app, replay, takeover, seat reclaim, and expiry tests | A compromised Steam account/device remains authoritative |
+| Uninvited game-session admission | Current lobby owner authorizes a bounded, expiring identity/session join grant; successful allocation consumes it | Direct uninvited join, wrong identity/session, non-owner issuance, expiry/revocation, replay, and invite-flow tests | The current lobby owner chooses whom to admit; Steam metadata alone has no authority |
 | Client authority or hidden-state leak | Server-owned state machine; deny-by-default action checks; recipient views | 2/3/4-client transcripts and differential projection tests | New actions/projections require renewed review |
 | Development identity in release | Compile-time feature separation and package inspection | Final packages prove adapter/symbol/config absence | Build misconfiguration remains possible until package checks run |
 | Resource exhaustion | Bounded admission, messages, queues, tasks, retries, parsing, and fan-out | Boundary tests and authorized capacity experiments | One region may refuse legitimate spikes |
@@ -55,6 +56,13 @@ approval.
   them raw.
 - A fresh validated Steam identity can reclaim only its own reserved in-memory
   seat.
+- New-seat admission to an existing session requires the contract's join grant
+  from the current connected lobby owner. Authentication, knowledge of a session
+  ID, and client-reported Steam membership do not authorize admission.
+  Grant issuance/revocation and admission use the session's serialized authority
+  path; failed joins cannot spend grants or mutate reservations. Pending grants
+  obey the contract's expiry and
+  revocation rules. Synthetic capacity identities take the same path.
 - Exact aggregate content identity is checked before admission or takeover.
   A mismatch cannot evict the current connection, extend a reservation, or
   disclose gameplay state. A matching claim is not proof of client integrity;
@@ -70,8 +78,9 @@ approval.
 - Long-lived tasks have explicit owners, cancellation, and joined outcomes.
 - Structured logs identify operations without message bodies, credentials, or
   personal data.
-- A draining process refuses new admission before shutdown. A forced stop never
-  claims a clean drain or recovered run.
+- A draining process refuses new admission, grants, and run starts. Idle lobbies
+  and completed summaries end under the contract's deadlines even if clients
+  stay connected. A forced stop never claims a clean drain or recovered run.
 
 ## Supply chain and release
 

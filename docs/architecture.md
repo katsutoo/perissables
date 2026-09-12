@@ -160,12 +160,17 @@ process-global access.
 One session owner holds one authoritative lobby/run in memory. There is no
 persistence adapter or database in MVP.
 
-A deploy marks the process unready, refuses new admission, and lets existing
-sessions finish within a bounded Phase 10-measured drain window. Rejoin remains
-available to reserved seats while that process lives. A process crash or forced
-stop can end active runs and returns clients through the stable run-lost path.
-Regional routing must not send a reserved-seat rejoin to a replacement process
-that cannot own the in-memory session.
+A deploy marks the process unready and refuses new admission, grants, and run
+starts. Idle lobbies end; active runs finish through summary and then end without
+returning to a lobby on that process. Reserved seats may rejoin non-ended
+running/summary sessions within the absolute deadlines. Bounded cleanup permits
+exit even when clients stay connected. Phase 10 measures the drain window and
+proves these contract transitions on Railway.
+
+Idle/completed sessions receive a maintenance notice. A deadline, process crash,
+or forced stop that interrupts a run uses the stable run-lost path. Regional
+routing must not send a reserved-seat rejoin to a replacement process that cannot
+own the in-memory session.
 
 ## Engineering Practices
 

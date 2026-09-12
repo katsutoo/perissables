@@ -2,7 +2,7 @@
 
 Status: Normative automated-test policy
 Owner: Sole developer
-Updated: 2026-09-04
+Updated: 2026-09-12
 
 Product and protocol behavior comes from `docs/mvp-contract.md`. This document
 defines how automated tests earn confidence without becoming a second
@@ -76,20 +76,23 @@ Use boundary analysis, not mechanical case multiplication.
   stale/duplicate/gap sequences, recipient-specific projections, queue refusal,
   reconnect handoff, and slow writers.
 - Identity tests cover wrong app/identity, stale Steam proof, takeover, seat
-  reclaim, expiry, and absence of local/benchmark adapters in release features.
+  reclaim, expiry, owner-authorized new-seat admission, and absence of
+  local/benchmark adapters in release features.
 - Content tests cover duplicate/unknown fields, resource limits, disabled TMX
   external access, graph errors, reference errors, checksum stability, and the
   exact release-content minimum.
 - Process-lifecycle tests cover admission refusal after unready, reserved-seat
-  rejoin while draining, natural completion, deadline expiry, forced stop, and
-  stable run-loss behavior.
+  rejoin while draining, rejected run starts, idle-lobby closure, summary-to-end
+  transitions, natural completion with connected peers, deadline expiry, forced
+  stop, and stable run-loss behavior.
 
-The following focused transcripts close the documentation review findings. Add
-them with their owning phase; these are acceptance cases, not tests already run.
+Add these focused acceptance transcripts with their owning phase. They describe
+required behavior; they are not tests already run.
 
 | Phase | Behavior and required oracle |
 | --- | --- |
-| 02, extended in 04 | Exact five-field content match admits; change each field independently to get `content_mismatch` without seat allocation or gameplay state. Missing/malformed fields and wrong protocol retain their distinct errors. Phase 04 adds canonical checksum and locale-selection cases. |
+| 02, extended in 04 | An otherwise authorized join with exact five-field content match admits; change each field independently to get `content_mismatch` without seat allocation, grant consumption, or gameplay state. Missing/malformed fields and wrong protocol retain their distinct errors. Phase 04 adds canonical checksum and locale-selection cases. |
+| 02, Steam qualification in 07 | A valid identity with known session ID and matching content but no grant gets `join_not_authorized` without seat/state disclosure or reservation mutation. Only the current connected lobby owner can issue/revoke grants. Wrong identity/session, expired/revoked grants, and consumed-grant replay cannot allocate a seat. Successful admission consumes one grant atomically; capacity or content failure does not. Cover grant bounds, owner change, run start, and leave/removal invalidation. Rejoin with a valid reservation needs no new grant. Phase 07 proves the normal Steam invite/membership flow completes owner authorization before game admission, including owner handoff. |
 | 04 | Zero story ballots select the declared default; one winner, leader tie, and lexical tie each select the specified choice without RNG consumption. Disconnect discards an existing ballot; rejoin cannot resurrect it. A fresh ballot before closure counts; at the deadline it is rejected. |
 | 04 | Check actors follow eligible leader then lexical fallback even when a different player initiated the interaction. Use unequal stats and a fixed roll that distinguishes them. An empty candidate set leaves the node waiting without RNG/modifier consumption; reconnect resolves once; ending cancels. Disconnect before versus after atomic resolution cannot produce a second roll. |
 | 05 | Repeated normal/critical guards replace remaining hit counts; zero damage preserves guard. Repeated bonuses/penalties replace their own slots, combine once, clamp, and both expire on every actual check including criticals. Death/encounter end clears effects; disconnect does not. |
@@ -97,6 +100,7 @@ them with their owning phase; these are acceptance cases, not tests already run.
 | 05 | No loot ballots or no valid recipient means no assignment. Revalidate recipients at closure; simultaneous awards competing for one free slot resolve in the specified corpse/slot order without overflow or duplicate grants. |
 | 06, transport qualification in 07 | Leader expires while all others are disconnected: vacant role, no random draw, then one election on eligible rejoin. Empty lobby ownership similarly recovers. Leave/expiry in each state releases the right seat and removes active characters/items without loot. One-player continuation, no-living-player wipe, no-seat end, and reset to a two-player start requirement are distinct outcomes. |
 | 07 | Due expiry wins over rejoin or a due vote. Dead spectators cannot advance gameplay while every living player is disconnected; gameplay resumes with remaining time, while seat/session/drain expiry keeps running. A content-mismatched takeover neither replaces the connection nor extends grace. |
+| 10 spike, 11 implementation | Drain with idle, running, and summary sessions. Idle lobbies end immediately; new admission, grants, and queued post-drain `StartRun` are refused. A run committed before drain finishes through summary to `Ended`. Keep peers connected and verify all seats/tasks release and the process exits before its drain deadline. Repeat with missing summary acknowledgements: the absolute summary timeout ends the session, and reconnect cannot extend it. Running/summary rejoin remains valid only before end/expiry. Idle/completed closure shows maintenance; an interrupted run shows run loss. No summary returns to the draining process's lobby. |
 
 Phase 13 build checks also establish the production/capacity-build relationship
 from `docs/benchmark-plan.md`, including adapter absence in the production

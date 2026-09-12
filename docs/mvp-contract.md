@@ -2,7 +2,7 @@
 
 Status: Ready for Phase 01 implementation
 Owner: Sole developer
-Updated: 2026-09-04
+Updated: 2026-09-12
 
 This document is the source of truth for product, authority, compatibility, and
 release requirements. It intentionally does not pre-design every queue, storage
@@ -402,7 +402,7 @@ Initial wire safety ceilings:
 
 ### Identity And Rejoin
 
-- Production join/rejoin requires a fresh Steam ticket validated for the
+- Production create/join/rejoin requires a fresh Steam ticket validated for the
   expected app and ownership before authority is granted.
 - Tickets are never logged or persisted raw, and the client stores no rejoin
   bearer token locally.
@@ -414,6 +414,43 @@ Initial wire safety ceilings:
   gameplay input is accepted.
 - Production connections use the trusted environment endpoint allowlist with
   normal certificate and hostname verification and no plaintext fallback.
+
+### New-seat authorization
+
+Steam authentication proves identity and app ownership. New-seat admission also
+requires permission to enter the requested game session:
+
+- Successful session creation admits its authenticated creator as lobby owner.
+  Every subsequent new seat requires an unexpired, unconsumed server-held join
+  grant bound to that session and the joining identity.
+- Only the current connected lobby owner may issue or revoke a grant through
+  their authenticated session connection, while the session is in `Lobby` and
+  the process is accepting new admission. Other players cannot approve themselves
+  or another identity. A session ID, Steam lobby ID, ticket, or client claim of
+  membership alone grants no admission rights.
+- The owner's client requests grants for members admitted by Steam to the
+  associated private/friends lobby. Phase 07 connects this to the normal Steam
+  invite/membership flow, including owner handoff. The server trusts the current
+  owner's explicit authorization, not an applicant's reported Steam membership
+  or lobby metadata. No separate approval screen is required.
+- Keep at most one pending grant per identity/session. Grant count, issuance
+  rate, and absolute lifetime have tested ceilings frozen in Phase 02. Grants
+  expire without extending session lifetime. Owner change, run start, drain,
+  and session end revoke all pending grants. Leave or seat removal clears any
+  grant for that identity; later new-seat admission requires a new owner grant.
+- After the existing protocol, identity, and content checks, the session owner
+  checks the grant and other admission conditions and consumes the grant
+  atomically with successful seat allocation. Failure does not consume a grant,
+  change seats/reservations, or disclose gameplay state. An otherwise valid join
+  without a valid grant returns `join_not_authorized`; existing compatibility,
+  capacity, lifecycle, and drain errors retain their meanings.
+- Reserved-seat rejoin uses the authenticated reservation instead of a join
+  grant. Grant expiry or owner change cannot revoke a valid reservation.
+
+Phase 02 implements this policy with local identities and freezes its DTOs and
+acceptance fixtures. Phase 07 binds it to validated Steam identities and proves
+that the invite flow authorizes the intended identity before game admission.
+Synthetic capacity clients use the same owner-grant path.
 
 ### Session Lifecycle
 
@@ -429,9 +466,11 @@ States are `Lobby`, `Running`, `Summary`, and `Ended`.
   player, ownership is vacant; apply the same rule on the next join/rejoin.
   Lobby ownership is separate from run leadership and requires no living actor.
 - Starting requires two to four occupied seats, all connected, ready, and using
-  unique characters. Membership or character-selection changes clear readiness.
+  unique characters, and a process that is not draining. Membership or
+  character-selection changes clear readiness.
 - Run completion or wipe enters summary.
-- Acknowledgement or bounded timeout returns remaining seats to a cleared lobby.
+- Acknowledgement or bounded timeout returns remaining seats to a cleared lobby,
+  except during drain, when the session enters `Ended` as specified below.
 - Empty/expired sessions end and release capacity.
 - Combat turns and story/loot votes have monotonic deadlines. When no living
   player is connected, gameplay and its deadlines pause, including enemy turns
@@ -466,12 +505,35 @@ long-term save, or account progression.
 - A server process crash ends its active lobbies and runs. Reconnecting clients
   receive a stable run-lost error and return to lobby rather than restoring
   partial state.
-- A supported deployment first becomes unready, stops new lobby/session
-  admission, and lets admitted sessions finish within a bounded drain window.
-- Reserved-seat rejoin remains available while a draining process is alive.
-- The process exits cleanly after its sessions end or the drain deadline expires.
-  Forced termination may end remaining runs and must not be reported as a clean
-  drain.
+- A supported deployment enters drain once, becomes unready, and refuses new
+  session creation, new-seat admission, join grants, and `StartRun` with
+  `server_draining`. Drain and run-start commits have an authoritative order:
+  starts committed before drain may finish; starts processed at or after it are
+  rejected even if their requests were already queued. No new run may commit
+  after the process reports itself unready for drain.
+- Drain applies these terminal transitions without waiting for players to leave:
+
+| Session state | Drain behavior |
+| --- | --- |
+| `Lobby` | Immediately enter `Ended` and release seats, reservations, and grants. |
+| `Running` | Let only the current run continue. Completion/wipe enters `Summary`; it can never return to `Lobby` on this process. |
+| `Summary` | Preserve the result until acknowledgement or the bounded summary timeout, then enter `Ended` and release reservations. |
+| `Ended` | Release remaining owned resources; no admission or rejoin. |
+
+- Reserved-seat rejoin remains available only for non-ended `Running` and
+  `Summary` sessions on the live draining process, subject to the existing
+  identity, content, and expiry checks. It cannot reset summary or drain
+  deadlines. During drain, the summary timeout is absolute, continues without
+  connected players, and is capped by the drain deadline.
+- Ending an idle or completed session sends a bounded `server_draining` notice
+  that returns clients to the connection/lobby entry flow. They can create or
+  join a new session on an admitting process; no seat or run is migrated.
+  Maintenance closure of an idle/completed session is not reported as run loss.
+- Once all sessions are `Ended`, bounded connection cleanup and joining owned
+  tasks let the process exit without waiting for peer disconnects. At the drain
+  deadline, end any remaining sessions; unfinished runs use the stable run-lost
+  outcome. Record natural completion, deadline expiry, and forced termination
+  separately. A deadline or forced stop that interrupts a run is not a clean drain.
 - Phase 10 measures and freezes the drain deadline, regional deployment shape,
   and rollback procedure on Railway. It does not select a database.
 

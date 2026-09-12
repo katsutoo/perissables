@@ -2,7 +2,7 @@
 
 Status: Normative performance experiment policy
 Owner: Sole developer
-Updated: 2026-09-04
+Updated: 2026-09-12
 
 Performance is established by production-mode measurements, not by contract
 detail or code inspection. Product targets come from `docs/mvp-contract.md`.
@@ -64,7 +64,9 @@ Pair the builds in one release evidence manifest:
 - Keep production admission, content matching, session mutation, serialization,
   authorization, rate limits, queues, and network paths identical after identity
   validation. Adapter input is bounded and uses unique synthetic principals;
-  it cannot bypass those checks or reach Steam.
+  it cannot bypass those checks or reach Steam. Synthetic new seats obtain
+  owner-authorized join grants through the same protocol; setup records their
+  outcomes outside steady-state timing.
 - Qualify the real identity path separately. At a common small load supported by
   the authorized account pool, compare both builds' post-auth behavior and
   unprofiled timing under the same workload/environment. Freeze practical
@@ -99,8 +101,10 @@ in-memory session while keeping drain and rollback simple for one developer?
 - Controlled latency-impairment playtests that freeze the highest acceptable
   cross-area movement/input latency before choosing the region set.
 - Client disconnect/rejoin routed back to the owning live process.
-- Mark one process unready, refuse new admission, finish short and full-length
-  sessions, and expire the drain deadline.
+- Mark one process unready; refuse new admission, grants, and run starts. Keep
+  clients connected while idle lobbies end and short/full-length runs finish
+  through summary to `Ended`. Exercise missing summary acknowledgements,
+  reconnect without deadline extension, and drain deadline expiry separately.
 - Forced stop, process crash, regional outage, replacement deployment, and
   rollback with the documented run-lost behavior.
 
@@ -170,7 +174,8 @@ rare classes are reported without a fabricated p99.
 
 Run separately from steady state:
 
-- clean drain, drain deadline, forced stop, process crash, and stable run loss;
+- clean drain with connected peers, idle-lobby closure, rejected run starts,
+  summary timeout, drain deadline, forced stop, process crash, and stable run loss;
 - all-client reconnect spread within real limiter budgets and owning-process
   routing;
 - one backpressured client per session while healthy clients continue;

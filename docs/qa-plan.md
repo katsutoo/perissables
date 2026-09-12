@@ -2,7 +2,7 @@
 
 Status: Normative release-behavior policy
 Owner: Sole developer
-Updated: 2026-09-04
+Updated: 2026-09-12
 
 QA exercises the product through a supported shipped entrypoint. Internal state
 machines, parser matrices, and process-lifecycle fault injection belong to
@@ -64,7 +64,8 @@ added to the support contract.
    locales, with keyboard-only navigation, visible focus, correct wrapping/font
    fallback, independent audio channels, and presentation fallbacks.
 4. **Hosted convergence.** Complete deterministic 2-, 3-, and 4-player staging
-   runs through private/friends Steam invites; verify automatic worst-latency
+   runs through private/friends Steam invites, including owner handoff and
+   successful owner-authorized game admission; verify automatic worst-latency
    Railway region selection for same-area and cross-area parties, observe stable
    fifth-seat and server-capacity refusal without affecting admitted players,
    and confirm no public lobby browser or matchmaking is exposed.
@@ -76,17 +77,21 @@ added to the support contract.
    to finish an existing run but not start a new solo run. Deadline interleavings
    belong to automated transcripts.
 6. **Drain and run loss.** Exercise a clean drain, drain deadline, forced stop,
-   and isolated process crash at declared user-visible points. Existing sessions
-   and reserved-seat rejoin work while the owner drains; forced/crashed runs end
-   with the stable run-lost outcome and no false recovery claim.
+   and isolated process crash at declared user-visible points. Keep clients
+   connected: idle lobbies close with maintenance guidance, new runs cannot
+   start, and an active run finishes through summary before its session closes.
+   Reserved-seat rejoin works for non-ended running/summary sessions. An idle or
+   completed session must not show run loss; interrupted runs use the stable
+   run-lost outcome with no false recovery claim. Deadline interleavings and
+   internal cleanup assertions belong to process-lifecycle tests.
 7. **Trust boundaries.** Observe invalid/expired Steam proof and compatibility
    failures through supported connection flows. Wrong protocol shows
    `update_required`; a valid unequal content identity shows `content_mismatch`
    with update/restart guidance. A failed rejoin preserves the reservation and
    existing connection. Controlled mismatching peer builds have their own
    recorded digests. Oversized/malformed traffic and per-field mismatch matrices
-   belong to protocol integration tests. Confirm no leaked internals or external
-   content fetch.
+   belong to protocol integration tests, as do direct uninvited joins and grant
+   forgery/replay cases. Confirm no leaked internals or external content fetch.
 8. **Final package and rollback.** On exact Phase 13 candidates, inspect package
    contents, prove development identity/debug paths and secrets are absent,
    launch both targets from clean caches, verify signatures/checksums/depot
@@ -103,9 +108,10 @@ environments are separate diagnostic artifacts with their own digest.
   complete, and becomes false before graceful drain.
 - Capacity exhaustion rejects new admission but does not make healthy existing
   sessions or reserved-seat rejoin unready.
-- Shutdown stops admission, preserves live sessions through its measured drain
-  deadline, awaits owned work, and does not claim a clean close or recovered run
-  after forced termination.
+- Shutdown stops admission and run starts, ends idle lobbies and completed
+  summaries, and permits reserved-seat rejoin only to non-ended running/summary
+  sessions. It awaits bounded owned work without requiring clients to leave and
+  distinguishes maintenance closure from an interrupted run.
 - Public errors are stable and redacted; internal logs retain useful structured
   context without credentials or personal data.
 

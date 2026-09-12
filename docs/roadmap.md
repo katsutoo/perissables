@@ -57,15 +57,17 @@ regional deployment are later gates owned by the phases that need them.
 
 Build the first runnable product through the real server boundary:
 
-- two local test identities create/join one lobby;
+- two local test identities create/join one lobby through owner-authorized
+  new-seat admission;
 - the server starts one tiny run;
 - one map interaction triggers one check;
 - one legal and one rejected combat action resolve;
 - both clients converge on the same summary.
 
-Freeze the five-field content-identity admission payload and positive/mismatch
-fixtures against the slice aggregate. Identity checks precede seat allocation;
-Phase 04 adds the full canonical checksum corpus.
+Freeze the five-field content-identity admission payload, owner-grant DTOs and
+bounds, and positive/rejection fixtures against the slice aggregate. Identity,
+content, and grant checks precede seat allocation; successful allocation consumes
+the grant atomically. Phase 04 adds the full canonical checksum corpus.
 
 Use real protocol DTOs, revisions, events, errors, and bounded queues from the
 start. Restart durability, Steam authentication, polished rendering, and broad
@@ -113,9 +115,13 @@ and last-player continuation with injected-time state-machine tests.
 ### Phase 07 - Multiplayer And Identity Hardening
 
 Add Steam ticket validation and end-to-end Steam lobby creation, join, and
-invite handling in isolated staging. Add fresh-ticket reserved-seat reclaim,
-single-connection takeover, acknowledged resync, replay protection, heartbeat,
-rate limits, slow-client handling, and deterministic transport-chaos tests.
+invite handling in isolated staging. Connect the owner's Steam membership flow
+to the Phase 02 join grants, including owner handoff, and prove an authenticated
+uninvited client cannot join directly using a known session ID.
+
+Add fresh-ticket reserved-seat reclaim, single-connection takeover, acknowledged
+resync, replay protection, heartbeat, rate limits, slow-client handling, and
+deterministic transport-chaos tests.
 Qualify the Phase 06 lifecycle rules over real connections, including grace-deadline
 rejoin, ballot discard, and content-mismatched takeover without reservation changes.
 
@@ -152,7 +158,8 @@ Publish one decision record containing:
   automatic worst-latency placement policy;
 - cross-region latency and uncertainty;
 - owning-process session/rejoin routing;
-- measured drain deadline and admission behavior;
+- measured drain deadline and proof of the contract's admission/run-start
+  refusal, idle-lobby closure, and summary-to-end behavior with connected peers;
 - forced-stop and run-lost behavior;
 - deployment and rollback procedure; and
 - rejected alternatives with measured reasons.
@@ -164,11 +171,13 @@ measured feasibility gate before Phase 11 implementation.
 
 ### Phase 11 - Regional service and graceful drain
 
-Implement the Phase 10 decision. A draining process becomes unready, stops new
-admission, preserves live sessions and reserved-seat rejoin until the measured
-deadline, then exits. Exercise regional routing, process replacement, forced
-stop, crash/run-loss handling, observability, and rollback with production-shaped
-integration tests.
+Implement the Phase 10 decision and locked drain transitions. Refuse new
+admission, grants, and run starts; end idle lobbies and finish only current runs
+through summary to `Ended`. Preserve eligible reserved-seat rejoin until session
+end or the absolute deadline, then complete bounded cleanup without waiting for
+clients to leave. Exercise regional routing, process replacement, forced stop,
+crash/run-loss handling, observability, and rollback with production-shaped
+integration tests. Distinguish maintenance closure from interrupted runs.
 
 ### Phase 12 - Release QA, Balance, And Performance
 

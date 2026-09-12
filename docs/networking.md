@@ -79,11 +79,19 @@ must know them.
 
 ## Identity
 
-Production join/rejoin validates a fresh Steam proof for the expected app and
-ownership. The server issues all session/player IDs.
+Production create/join/rejoin validates a fresh Steam proof for the expected app
+and ownership. The server issues all session/player IDs.
 
+- Joining an existing session also requires the contract's server-held join
+  grant for the exact identity/session, authorized by the current connected
+  lobby owner. Steam metadata and an applicant's membership claim cannot
+  substitute for that grant.
+  Allocation consumes it atomically; rejected admission leaves it unconsumed.
+  Phase 02 proves this with local identities; Phase 07 connects owner approvals
+  to the Steam invite/membership flow before game admission.
 - Raw Steam tickets are never logged or persisted.
-- A returning Steam identity may reclaim only its own reserved in-memory seat.
+- A returning Steam identity may reclaim only its own reserved in-memory seat,
+  without needing a new join grant.
 - One player has at most one authoritative connection.
 - The client acknowledges recipient-specific resync before new gameplay input.
 - Stale takeover-close notifications cannot disconnect the replacement.
@@ -109,12 +117,17 @@ while the vote is open. Gameplay pauses when no living player is connected;
 absolute expiry and drain deadlines continue. Lifecycle changes and atomic story
 check resolution share the same serialized authority path.
 
-Session state exists only in the owning server process. A graceful deploy marks
-that process unready, refuses new admission, and preserves existing connections
-and reserved-seat rejoin while sessions drain. A process crash or forced stop
-ends remaining runs; clients receive the stable run-lost outcome rather than a
-partial restore. Regional routing must keep rejoin traffic on the owning process
-while it lives.
+Session state exists only in the owning server process. Drain refuses new
+admission, grants, and run starts. Idle lobbies end immediately; active runs
+finish through summary and then end instead of returning to that process's lobby.
+Reserved-seat rejoin remains available for non-ended running/summary sessions.
+Summary and drain deadlines cannot be extended by reconnects, and cleanup never
+waits indefinitely for peers to disconnect.
+
+Idle/completed sessions receive the contract's maintenance notice. A drain
+deadline, process crash, or forced stop that interrupts a run uses the stable
+run-lost outcome. Regional routing must keep permitted rejoin traffic on the
+owning process while it lives; maintenance does not migrate session state.
 
 ## Slow And Failed Peers
 

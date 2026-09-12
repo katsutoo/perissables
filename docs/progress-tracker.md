@@ -18,6 +18,9 @@ links its relevant code, CI, test, QA, security, benchmark, or decision evidence
   eligibility, empty leadership and departure transitions, story-check actors,
   effect/item resolution, content admission, and separate capacity-build evidence.
   Implementation and validation remain unchecked in their owning phases below.
+- [x] Define [new-seat authorization](mvp-contract.md#new-seat-authorization)
+  and [terminal drain transitions](mvp-contract.md#in-memory-sessions-and-draining),
+  with acceptance cases and implementation gates below.
 - [x] Phase 00 complete.
 
 ## Phase 01 - Repository Bootstrap
@@ -40,12 +43,16 @@ links its relevant code, CI, test, QA, security, benchmark, or decision evidence
 
 ## Phase 02 - Early Authoritative Vertical Slice
 
-- [ ] Two local test identities create/join one lobby through the real protocol.
+- [ ] Two local test identities create/join one lobby through the real protocol
+  and current-owner join grants.
 - [ ] One map interaction, dice check, legal combat action, and rejected action
   resolve on the server.
 - [ ] Both clients converge on the same summary revisions/events.
 - [ ] Freeze content-identity admission DTOs and exact-match/mismatch fixtures;
   mismatches cannot allocate seats or disclose gameplay state.
+- [ ] Freeze join-grant DTOs/bounds; prove owner-only issuance, identity/session
+  binding, atomic consumption, failure preservation, expiry/revocation, and
+  rejection of uninvited joins without weakening reserved-seat rejoin.
 - [ ] Release feature checks prove the local identity adapter is absent.
 - [ ] Run a headless/internal rules playtest and record unclear check, combat,
   and turn feedback for Phase 05.
@@ -103,7 +110,10 @@ links its relevant code, CI, test, QA, security, benchmark, or decision evidence
 ## Phase 07 - Multiplayer And Identity Hardening
 
 - [ ] Add authorized staging Steam validation plus end-to-end lobby creation,
-  join, and invites; prove expected app/ownership binding.
+  join, and invites; prove expected app/ownership binding and owner-grant
+  authorization before game admission, including owner handoff.
+- [ ] Reject direct uninvited joins and stale/wrong-principal grants with no
+  seat allocation, gameplay disclosure, or reservation mutation.
 - [ ] Implement fresh-ticket reserved-seat reclaim, takeover, acknowledged
   resync, heartbeat, replay rejection, and stable public errors.
 - [ ] Qualify bounded rate, mailbox/writer, slow-client, and transport-chaos
@@ -145,6 +155,8 @@ links its relevant code, CI, test, QA, security, benchmark, or decision evidence
   impairment playtests.
 - [ ] Record latency by source/host region, drain duration, sessions
   completed/lost, deployment time, CPU/RSS/network, and operator steps.
+- [ ] Prove idle-lobby closure, rejected run starts, summary-to-end transitions,
+  and natural drain with connected clients under absolute summary/drain deadlines.
 - [ ] Freeze the smallest Railway-only region set within the entry-level budget,
   automatic worst-latency placement/rejoin routing, drain deadline, run-lost
   behavior, and rollback procedure.
@@ -153,8 +165,10 @@ links its relevant code, CI, test, QA, security, benchmark, or decision evidence
 ## Phase 11 - Regional service and graceful drain
 
 - [ ] Implement the selected regional placement and owning-process routing.
-- [ ] Stop admission before drain while preserving live sessions and
-  reserved-seat rejoin through the measured deadline.
+- [ ] Refuse admission, grants, and run starts during drain; end idle lobbies
+  and completed summaries while preserving eligible running/summary rejoin.
+- [ ] Prove bounded cleanup exits with clients still connected; summary timeout
+  and rejoin cannot extend drain. Distinguish maintenance closure from run loss.
 - [ ] Pass production-shaped regional loss, process replacement, forced-stop,
   crash/run-loss, observability, and rollback tests.
 - [ ] Phase 11 complete.
